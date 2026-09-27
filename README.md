@@ -11,16 +11,17 @@ the official ONVIF Media Signing framework as the signing/validation core.
 
 ```text
 Project Status:              Experimental / Pre-release
-Current milestone:           M0 Feasibility — Complete
+Current milestone:           M1 File-based reference lab — in development
 Stable end-user release:     None
 First intended usable
-developer release:           M1 / v0.1.0  (not started)
+developer release:           M1 / v0.1.0  (not released)
 ```
 
-M0 is a **completed feasibility spike**, not a stable product release. There is no
-supported end-user installation yet. This repository is currently useful primarily
-for **developers, researchers, integrators**, and people following ONVIF Media
-Signing work.
+M0 feasibility is complete. M1 is **in development** and not a stable product
+release. The current tree exposes an early **`video-trust verify`** path for
+Annex-B H.264/H.265 elementary streams. `sign` and `tamper` are not implemented
+yet. This repository is primarily useful for **developers, researchers, and
+integrators**.
 
 ## What this project is
 
@@ -45,11 +46,24 @@ M0 does **not** mean ONVIF certification/conformance, production validation,
 camera-source authenticity, legal evidence certification, or a finished Nanexus
 verifier. Details: [`docs/m0-feasibility.md`](docs/m0-feasibility.md).
 
-## What M0 does not provide yet
+## Current verify capability (M1 in development)
 
-* stable Nanexus CLI
-* supported end-user installation
-* production-ready verification
+After building (see [`docs/build.md`](docs/build.md)):
+
+```bash
+video-trust verify --codec h264 input.h264
+video-trust verify --codec h265 --ca ca.pem --json input.h265
+```
+
+Input is Annex-B elementary stream only (not MP4/MKV/RTSP). Results expose
+separate trust axes; there is no single boolean “authentic” claim. Contracts:
+[`docs/m1-contracts.md`](docs/m1-contracts.md).
+
+## What is not provided yet
+
+* `video-trust sign` / `video-trust tamper`
+* stable release / supported end-user packaging
+* production-ready verification guarantees
 * RTSP / live verification
 * MP4/container workflow as a Nanexus product feature
 * VMS/NVR integration
@@ -64,7 +78,7 @@ verifier. Details: [`docs/m0-feasibility.md`](docs/m0-feasibility.md).
 | Milestone | Intent | Status |
 | --- | --- | --- |
 | **M0** | Feasibility spike | **Complete** |
-| **M1** | File-based reference lab (`sign` / `verify` / `tamper`) — first intended usable developer release (`v0.1.0`) | **Next** |
+| **M1** | File-based reference lab (`sign` / `verify` / `tamper`) — first intended usable developer release (`v0.1.0`) | **In development** (verify slice only) |
 | **M2** | Inspect + report | Planned |
 | **M3** | VMS/NVR preservation testing | Planned |
 | **M4** | Passive live RTSP verification | Planned |
@@ -85,12 +99,13 @@ vendored into this repository by default.
 
 ## Build direction
 
-* Language: C++20 (Trust Core foundation started; CLI not yet implemented)
+* Language: C++20
 * Platform baseline: Linux x86_64 / Ubuntu 24.04
 * Build: Meson + Ninja
 * Signing core: official ONVIF Media Signing (C API), unthreaded plugin
+* CLI binary: `video-trust` (verify only in the current tree)
 
-See [`docs/build.md`](docs/build.md) for configure/build/test steps.
+See [`docs/build.md`](docs/build.md) for configure/build/test/install steps.
 
 ## Documentation
 

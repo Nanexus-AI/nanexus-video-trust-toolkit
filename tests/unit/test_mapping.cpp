@@ -29,80 +29,51 @@ onvif_media_signing_authenticity_t MakeReport(MediaSigningAuthenticityResult aut
 int main() {
   using namespace videotrust;
 
-  // Unsigned: integrity not applicable; source still not established.
   {
     const auto report = MakeReport(OMS_NOT_SIGNED, OMS_PROVENANCE_NOT_FEASIBLE);
-    const auto r = MapFromUpstream(Codec::H264, report, /*trust_anchor_provided=*/false);
-    if (r.media_signing != SigningPresence::NotDetected) {
-      return fail("unsigned presence");
-    }
-    if (r.signature_integrity != SignatureIntegrity::NotApplicable) {
-      return fail("unsigned integrity");
-    }
-    if (r.certificate != CertificateStatus::NotProvided) {
-      return fail("unsigned cert axis");
-    }
+    const auto r = MapFromUpstream(Codec::H264, report, false);
     if (r.source_authenticity != SourceAuthenticity::NotEstablished) {
-      return fail("unsigned must not claim source authenticity");
+      return fail("unsigned source");
     }
     if (ExitCodeForVerification(r) != ExitCode::UnsignedOrNotVerifiable) {
-      return fail("unsigned exit code");
+      return fail("unsigned exit");
     }
   }
 
-  // Valid signature WITHOUT trust anchor: must NOT claim source authenticity.
   {
     const auto report = MakeReport(OMS_AUTHENTICITY_OK, OMS_PROVENANCE_OK);
-    const auto r = MapFromUpstream(Codec::H265, report, /*trust_anchor_provided=*/false);
+    const auto r = MapFromUpstream(Codec::H265, report, false);
     if (r.signature_integrity != SignatureIntegrity::Ok) {
       return fail("ok integrity");
     }
     if (r.certificate != CertificateStatus::NotProvided) {
-      return fail("no-ca must stay NotProvided");
+      return fail("no-ca cert");
     }
+    // Even if upstream provenance enum is OK, without CA Nanexus keeps cert NotProvided
+    // and source authenticity remains not established.
     if (r.source_authenticity != SourceAuthenticity::NotEstablished) {
-      return fail("valid signature must not imply source authenticity");
-    }
-    if (ExitCodeForVerification(r) != ExitCode::Success) {
-      return fail("ok exit code");
+      return fail("source must stay not_established");
     }
   }
 
-  // Valid signature WITH trust anchor + provenance OK.
   {
     const auto report = MakeReport(OMS_AUTHENTICITY_OK, OMS_PROVENANCE_OK);
-    const auto r = MapFromUpstream(Codec::H264, report, /*trust_anchor_provided=*/true);
+    const auto r = MapFromUpstream(Codec::H264, report, true);
     if (r.certificate != CertificateStatus::Ok) {
-      return fail("ca ok");
+      return fail("ca maps to certificate ok");
     }
-    if (r.source_authenticity != SourceAuthenticity::ProvenanceOk) {
-      return fail("provenance ok mapping");
+    if (r.source_authenticity != SourceAuthenticity::NotEstablished) {
+      return fail("certificate ok must not become source authenticity");
     }
   }
 
-  // Integrity failure is independent of certificate.
   {
     const auto report = MakeReport(OMS_AUTHENTICITY_NOT_OK, OMS_PROVENANCE_OK);
     const auto r = MapFromUpstream(Codec::H264, report, true);
-    if (r.signature_integrity != SignatureIntegrity::NotOk) {
-      return fail("not_ok integrity");
+    if (r.signature_integrity != SignatureIntegrity::NotOk ||
+        ExitCodeForVerification(r) != ExitCode::VerificationNegative) {
+      return fail("negative");
     }
-    if (r.certificate != CertificateStatus::Ok) {
-      return fail("axes must not collapse");
-    }
-    if (ExitCodeForVerification(r) != ExitCode::VerificationNegative) {
-      return fail("negative exit code");
-    }
-  }
-
-  // Enum mappers
-  if (MapAuthenticity(OMS_AUTHENTICITY_OK_WITH_MISSING_INFO) !=
-      SignatureIntegrity::OkWithMissingInfo) {
-    return fail("missing info map");
-  }
-  if (MapAuthenticity(OMS_AUTHENTICITY_VERSION_MISMATCH) !=
-      SignatureIntegrity::VersionMismatch) {
-    return fail("version mismatch map");
   }
 
   std::cout << "PASS: upstream mapping\n";

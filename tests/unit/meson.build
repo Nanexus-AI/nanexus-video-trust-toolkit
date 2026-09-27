@@ -18,3 +18,17 @@ test_result = executable(
   dependencies: videotrust_dep,
 )
 test('result_and_exit_codes', test_result)
+
+test_annexb = executable(
+  'test_annexb',
+  'test_annexb.cpp',
+  dependencies: videotrust_dep,
+)
+test('annexb_reader', test_annexb)
+
+test_render = executable(
+  'test_render',
+  'test_render.cpp',
+  dependencies: videotrust_dep,
+)
+test('render_text_json', test_render)

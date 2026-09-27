@@ -30,6 +30,30 @@ ExitCode ExitCodeForVerification(const VerificationResult& result) noexcept {
   return ExitCode::UnsignedOrNotVerifiable;
 }
 
+OverallState DeriveOverallState(const VerificationResult& result) noexcept {
+  if (IntegrityNegative(result.signature_integrity) ||
+      result.continuity == ContinuityStatus::Broken) {
+    return OverallState::Invalid;
+  }
+  if (result.media_signing == SigningPresence::NotDetected ||
+      result.signature_integrity == SignatureIntegrity::NotApplicable) {
+    return OverallState::Unsigned;
+  }
+  if (result.signature_integrity == SignatureIntegrity::NotFeasible ||
+      result.completeness == VerificationCompleteness::NotFeasible) {
+    return OverallState::NotVerifiable;
+  }
+  if (result.signature_integrity == SignatureIntegrity::OkWithMissingInfo ||
+      result.completeness == VerificationCompleteness::Incomplete ||
+      result.continuity == ContinuityStatus::MissingInfo) {
+    return OverallState::Partial;
+  }
+  if (IntegrityPositive(result.signature_integrity)) {
+    return OverallState::Valid;
+  }
+  return OverallState::NotVerifiable;
+}
+
 const char* ToString(Codec v) noexcept {
   switch (v) {
     case Codec::H264:
@@ -114,12 +138,24 @@ const char* ToString(SourceAuthenticity v) noexcept {
   switch (v) {
     case SourceAuthenticity::NotEstablished:
       return "not_established";
-    case SourceAuthenticity::ProvenanceOk:
-      return "provenance_ok";
-    case SourceAuthenticity::ProvenanceNotOk:
-      return "provenance_not_ok";
   }
   return "unknown";
+}
+
+const char* ToString(OverallState v) noexcept {
+  switch (v) {
+    case OverallState::Valid:
+      return "VALID";
+    case OverallState::Invalid:
+      return "INVALID";
+    case OverallState::Unsigned:
+      return "UNSIGNED";
+    case OverallState::NotVerifiable:
+      return "NOT_VERIFIABLE";
+    case OverallState::Partial:
+      return "PARTIAL";
+  }
+  return "UNKNOWN";
 }
 
 }  // namespace videotrust

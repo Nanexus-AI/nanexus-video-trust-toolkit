@@ -19,8 +19,8 @@ enum class SigningPresence {
 
 /// Maps upstream MediaSigningAuthenticityResult (media integrity axis).
 enum class SignatureIntegrity {
-  NotApplicable,      ///< No Media Signing detected (unsigned).
-  NotFeasible,        ///< Signing detected but validation not yet feasible.
+  NotApplicable,  ///< No Media Signing detected (unsigned).
+  NotFeasible,    ///< Signing detected but validation not yet feasible.
   Ok,
   OkWithMissingInfo,
   NotOk,
@@ -40,20 +40,30 @@ enum class VerificationCompleteness {
   NotFeasible,
 };
 
-/// Maps upstream MediaSigningProvenanceResult (certificate / trust-anchor axis).
+/// Maps upstream MediaSigningProvenanceResult (signing-key certificate axis).
+/// This is NOT device/camera source identity.
 enum class CertificateStatus {
   NotProvided,             ///< Caller supplied no trust anchor to Nanexus.
   NotFeasible,             ///< Upstream could not establish provenance.
   NotOk,
   Ok,
-  FeasibleWithoutTrusted,  ///< Upstream allowed provenance without trusted CA (warn).
+  FeasibleWithoutTrusted,  ///< Upstream allowed provenance without trusted CA.
 };
 
-/// Device/source identity is out of M1 lab scope; default remains NotEstablished.
+/// Source / device authenticity for M1 reference-lab material.
+/// Upstream provenance proves signing-key certificate trust, not camera identity.
+/// Therefore M1 keeps this axis at NotEstablished for all lab scenarios.
 enum class SourceAuthenticity {
   NotEstablished,
-  ProvenanceOk,
-  ProvenanceNotOk,
+};
+
+/// Convenience summary for CLI; never replaces individual trust axes.
+enum class OverallState {
+  Valid,
+  Invalid,
+  Unsigned,
+  NotVerifiable,
+  Partial,
 };
 
 struct Finding {
@@ -77,17 +87,16 @@ struct VerificationResult {
   std::vector<Finding> findings;
 };
 
-/// Future CLI exit-code contract (frozen for M1; CLI not implemented in this slice).
 enum class ExitCode : int {
-  Success = 0,              ///< Operation OK / verification positive.
-  VerificationNegative = 1, ///< Completed verify; integrity/authenticity negative.
-  UsageOrInputError = 2,    ///< CLI/unsupported/malformed/parse/input error.
-  RuntimeFailure = 3,       ///< Internal/upstream/runtime failure.
-  UnsignedOrNotVerifiable = 4, ///< Completed verify; unsigned or not verifiable.
+  Success = 0,
+  VerificationNegative = 1,
+  UsageOrInputError = 2,
+  RuntimeFailure = 3,
+  UnsignedOrNotVerifiable = 4,
 };
 
-/// Map a completed VerificationResult to the frozen exit-code contract.
 ExitCode ExitCodeForVerification(const VerificationResult& result) noexcept;
+OverallState DeriveOverallState(const VerificationResult& result) noexcept;
 
 const char* ToString(Codec v) noexcept;
 const char* ToString(SigningPresence v) noexcept;
@@ -96,5 +105,6 @@ const char* ToString(ContinuityStatus v) noexcept;
 const char* ToString(VerificationCompleteness v) noexcept;
 const char* ToString(CertificateStatus v) noexcept;
 const char* ToString(SourceAuthenticity v) noexcept;
+const char* ToString(OverallState v) noexcept;
 
 }  // namespace videotrust

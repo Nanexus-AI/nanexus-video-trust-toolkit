@@ -1,7 +1,5 @@
 #include "videotrust/upstream_mapping.hpp"
 
-#include <cstring>
-
 namespace videotrust {
 
 SignatureIntegrity MapAuthenticity(MediaSigningAuthenticityResult v) noexcept {
@@ -87,16 +85,9 @@ VerificationResult MapFromUpstream(Codec codec,
 
   out.certificate = MapProvenance(acc.provenance, trust_anchor_provided);
 
-  // Source authenticity is not inferred from signature validity alone.
-  if (!trust_anchor_provided) {
-    out.source_authenticity = SourceAuthenticity::NotEstablished;
-  } else if (acc.provenance == OMS_PROVENANCE_OK) {
-    out.source_authenticity = SourceAuthenticity::ProvenanceOk;
-  } else if (acc.provenance == OMS_PROVENANCE_NOT_OK) {
-    out.source_authenticity = SourceAuthenticity::ProvenanceNotOk;
-  } else {
-    out.source_authenticity = SourceAuthenticity::NotEstablished;
-  }
+  // Upstream provenance validates the signing public key against a trust anchor.
+  // That is certificate-axis evidence, not camera/source authenticity.
+  out.source_authenticity = SourceAuthenticity::NotEstablished;
 
   if (report.vendor_info.manufacturer[0] != '\0') {
     out.vendor_manufacturer = std::string(report.vendor_info.manufacturer);
@@ -112,12 +103,17 @@ VerificationResult MapFromUpstream(Codec codec,
     out.findings.push_back({"AUTH_NOT_OK", "Upstream authenticity validation failed"});
   }
   if (out.certificate == CertificateStatus::NotOk) {
-    out.findings.push_back({"PROVENANCE_NOT_OK", "Upstream provenance validation failed"});
+    out.findings.push_back({"PROVENANCE_NOT_OK", "Upstream signing-key provenance failed"});
   }
   if (out.certificate == CertificateStatus::FeasibleWithoutTrusted) {
     out.findings.push_back(
         {"PROVENANCE_WITHOUT_TRUSTED",
-         "Upstream reported provenance without a trusted anchor; treat cautiously"});
+         "Upstream reported key provenance without a trusted anchor; treat cautiously"});
+  }
+  if (out.certificate == CertificateStatus::Ok) {
+    out.findings.push_back(
+        {"SIGNING_KEY_PROVENANCE_OK",
+         "Signing public key validated against trust anchor; source authenticity not established"});
   }
 
   return out;

@@ -10,7 +10,8 @@ namespace videotrust {
 ///
 /// Trust axes are kept separate:
 /// signature integrity ≠ certificate status ≠ source authenticity.
-/// Source authenticity stays NotEstablished unless provenance is explicitly OK/NotOk.
+/// Upstream provenance maps to CertificateStatus only; SourceAuthenticity stays
+/// NotEstablished for M1 reference-lab material.
 VerificationResult MapFromUpstream(Codec codec,
                                    const onvif_media_signing_authenticity_t& report,
                                    bool trust_anchor_provided);

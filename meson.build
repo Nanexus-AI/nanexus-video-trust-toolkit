@@ -20,9 +20,6 @@ endif
 
 openssl_dep = dependency('openssl', version: '>=3.0.0')
 
-oms_lib_dir = oms_prefix / get_option('libdir')
-oms_inc_dir = oms_prefix / get_option('includedir') / 'media-signing-framework'
-# Some installs use lib/x86_64-linux-gnu
 oms_lib_candidates = [
   oms_prefix / 'lib',
   oms_prefix / 'lib' / 'x86_64-linux-gnu',
@@ -31,6 +28,7 @@ oms_lib_candidates = [
 
 cxx = meson.get_compiler('cpp')
 oms_lib = []
+oms_lib_dir = oms_prefix / 'lib'
 oms_found = false
 foreach libdir : oms_lib_candidates
   if fs.is_dir(libdir)
@@ -59,6 +57,7 @@ if not oms_found
   )
 endif
 
+oms_inc_dir = oms_prefix / get_option('includedir') / 'media-signing-framework'
 if not fs.is_dir(oms_inc_dir)
   error('Missing ONVIF headers at ' + oms_inc_dir)
 endif
@@ -74,10 +73,13 @@ inc = include_directories('include')
 videotrust_core = static_library(
   'videotrust_core',
   files(
+    'src/core/annexb.cpp',
     'src/core/error.cpp',
     'src/core/result.cpp',
+    'src/render/render.cpp',
     'src/upstream/session.cpp',
     'src/upstream/upstream_mapping.cpp',
+    'src/verification/verify.cpp',
   ),
   include_directories: inc,
   dependencies: oms_dep,
@@ -90,7 +92,22 @@ videotrust_dep = declare_dependency(
   dependencies: oms_dep,
 )
 
+video_trust = executable(
+  'video-trust',
+  'src/cli/main.cpp',
+  dependencies: videotrust_dep,
+  install: true,
+)
+
+oms_sign_annexb = executable(
+  'oms_sign_annexb',
+  'tests/tools/oms_sign_annexb.cpp',
+  dependencies: videotrust_dep,
+  install: false,
+)
+
 subdir('tests/unit')
+subdir('tests/integration')
 
 summary(
   {
