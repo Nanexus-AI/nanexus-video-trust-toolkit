@@ -1,7 +1,7 @@
-# Building Nanexus Video Trust Toolkit (M1)
+# Building Nanexus Video Trust Toolkit (M1 / 0.1.0)
 
-Experimental / pre-release. Annex-B `verify` / `sign` / `tamper` for H.264 and
-H.265. No stable release tag yet.
+Experimental / pre-release developer reference lab. Annex-B `verify` / `sign` /
+`tamper` for H.264 and H.265.
 
 ## Supported platform
 
@@ -60,7 +60,8 @@ Installed user-facing artifact: **`video-trust`** only (no public SDK headers).
 video-trust --version
 ```
 
-Version matches the Meson project version (`0.1.0` while preparing the first tag).
+Version matches the Meson project version (`0.1.0`). JSON verification output
+uses a separate `schema_version` of `"0.1"` — that is not the product SemVer.
 
 ## Next
 

@@ -12,7 +12,7 @@ framework/standard. It is **not** an official ONVIF project.
 | Milestone | Title | Status |
 | --- | --- | --- |
 | **M0** | Feasibility Spike | **Complete** |
-| **M1** | File-Based Reference Lab | **Nearing v0.1.0** (release candidate; not tagged) |
+| **M1** | File-Based Reference Lab | **v0.1.0 package frozen** (tag/Release pending) |
 | **M2** | Inspect + Report | Planned |
 | **M3** | VMS/NVR Preservation Testing | Planned |
 | **M4** | Passive Live RTSP Verification | Planned |
@@ -29,12 +29,12 @@ the official C API is a viable foundation for a thin C++20 Nanexus layer.
 
 See [`m0-feasibility.md`](m0-feasibility.md).
 
-## M1 — File-Based Reference Lab (nearing v0.1.0)
+## M1 — File-Based Reference Lab (v0.1.0 package)
 
 First intended usable developer release (`v0.1.0`): file-based reference lab with
 `sign` / `verify` / `tamper`, H.264/H.265 Annex-B, structured results, CLI + JSON,
-deterministic fixtures, and CI. Feature set is implemented; tag/release pending
-human Gate approval.
+deterministic fixtures, and CI. Release package is frozen; annotated tag and
+GitHub Release await final human approval.
 
 ## Later milestones (summary)
 

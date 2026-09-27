@@ -1,8 +1,7 @@
 # M1 contracts
 
-Contracts for the in-development `video-trust` CLI. M1 is **not** complete and
-there is **no** stable `v0.1.0` release yet. This milestone currently exposes
-**Annex-B `verify`, `sign`, and `tamper`**.
+Contracts for the `video-trust` CLI in the M1 / `0.1.0` developer release line.
+Product SemVer `0.1.0` is distinct from JSON `schema_version` `"0.1"`.
 
 ## Exit codes
 
