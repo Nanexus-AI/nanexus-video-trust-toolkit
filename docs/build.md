@@ -1,8 +1,8 @@
 # Building Nanexus Video Trust Toolkit (M1 in development)
 
 This repository provides a C++20 Trust Core and an in-development `video-trust`
-CLI. Current CLI capability: **Annex-B `verify` and `sign`** for H.264/H.265
-elementary streams. `tamper` is not implemented yet. There is no stable release.
+CLI. Current CLI capability: **Annex-B `verify`, `sign`, and `tamper`** for
+H.264/H.265 elementary streams. There is no stable release.
 
 ## Requirements
 
@@ -15,20 +15,12 @@ elementary streams. `tamper` is not implemented yet. There is no stable release.
 
 ## ONVIF dependency model
 
-The official [ONVIF Media Signing Framework](https://github.com/onvif/media-signing-framework)
-is **not vendored**. It is fetched at the approved pin and installed into a local
-prefix (gitignored):
-
-```text
-tag    r25.12.6
-commit cf7785ab993c18d921094e8e505c2c34a1350f28
-plugin unthreaded
-```
-
 ```bash
 ./scripts/fetch-upstream.sh
 ./scripts/build-upstream.sh          # installs to .oms-prefix by default
 ```
+
+Pin: tag `r25.12.6` / commit `cf7785ab993c18d921094e8e505c2c34a1350f28`, unthreaded plugin.
 
 ## Configure, build, test, install
 
@@ -36,13 +28,12 @@ plugin unthreaded
 meson setup build/nanexus -Doms_prefix="$PWD/.oms-prefix"
 meson compile -C build/nanexus
 meson test -C build/nanexus
-meson install -C build/nanexus   # installs the video-trust binary
+meson install -C build/nanexus
 ```
 
-## Example: sign then verify
+## Example: sign → tamper → verify
 
 ```bash
-# --cert is a PEM chain: leaf certificate … trust anchor (CA).
 video-trust sign \
   --codec h264 \
   --key signer-key.pem \
@@ -50,19 +41,18 @@ video-trust sign \
   -o signed.h264 \
   input.h264
 
-video-trust verify --codec h264 --ca ca.pem signed.h264
-video-trust verify --codec h265 --ca ca.pem --json signed.h265
+video-trust tamper \
+  --codec h264 \
+  --operation corrupt-vcl \
+  -o tampered.h264 \
+  signed.h264
+
+video-trust verify --codec h264 --ca ca.pem tampered.h264
 ```
 
-Use `--force` to overwrite an existing output. Signing is reference-lab only and
-does **not** establish camera/source authenticity.
+Tamper operations intentionally create controlled test material. They are not a
+general media editor. M1 signing does **not** establish camera/source authenticity.
 
-Exit codes and trust axes: [`m1-contracts.md`](m1-contracts.md).
+Operations: `corrupt-vcl`, `strip-signing-sei`, `truncate` (optional `--count N`).
 
-## Test fixtures
-
-Integration tests generate synthetic Annex-B streams and a test-only PKI via
-`scripts/gen-verify-fixtures.sh`. Do not treat generated keys as production
-identity material.
-
-See also [`upstream-media-signing.md`](upstream-media-signing.md).
+Contracts: [`m1-contracts.md`](m1-contracts.md).

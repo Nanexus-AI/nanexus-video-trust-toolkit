@@ -18,9 +18,9 @@ developer release:           M1 / v0.1.0  (not released)
 ```
 
 M0 feasibility is complete. M1 is **in development** and not a stable product
-release. The current tree exposes early **`video-trust verify`** and
-**`video-trust sign`** paths for Annex-B H.264/H.265 elementary streams.
-`tamper` is not implemented yet. This repository is primarily useful for
+release. The current tree exposes early **`video-trust verify`**,
+**`video-trust sign`**, and **`video-trust tamper`** paths for Annex-B
+H.264/H.265 elementary streams. This repository is primarily useful for
 **developers, researchers, and integrators**.
 
 ## What this project is
@@ -46,7 +46,7 @@ M0 does **not** mean ONVIF certification/conformance, production validation,
 camera-source authenticity, legal evidence certification, or a finished Nanexus
 verifier. Details: [`docs/m0-feasibility.md`](docs/m0-feasibility.md).
 
-## Current verify / sign capability (M1 in development)
+## Current verify / sign / tamper capability (M1 in development)
 
 After building (see [`docs/build.md`](docs/build.md)):
 
@@ -58,7 +58,13 @@ video-trust sign \
   -o signed.h264 \
   input.h264
 
-video-trust verify --codec h264 --ca ca.pem signed.h264
+video-trust tamper \
+  --codec h264 \
+  --operation corrupt-vcl \
+  -o tampered.h264 \
+  signed.h264
+
+video-trust verify --codec h264 --ca ca.pem tampered.h264
 video-trust verify --codec h265 --ca ca.pem --json input.h265
 ```
 
@@ -66,13 +72,13 @@ Input/output is Annex-B elementary stream only (not MP4/MKV/RTSP).
 
 `--cert` is a PEM certificate chain (leaf … trust anchor). M1 signing is a
 **reference-lab** operation: a valid signature and certificate evidence do
-**not** establish camera/source authenticity. Verify results expose separate
-trust axes; there is no single boolean “authentic” claim. Contracts:
+**not** establish camera/source authenticity. Tamper operations create
+controlled test material only. Verify results expose separate trust axes; there
+is no single boolean “authentic” claim. Contracts:
 [`docs/m1-contracts.md`](docs/m1-contracts.md).
 
 ## What is not provided yet
 
-* `video-trust tamper`
 * stable release / supported end-user packaging
 * production-ready verification guarantees
 * RTSP / live verification
@@ -89,7 +95,7 @@ trust axes; there is no single boolean “authentic” claim. Contracts:
 | Milestone | Intent | Status |
 | --- | --- | --- |
 | **M0** | Feasibility spike | **Complete** |
-| **M1** | File-based reference lab (`sign` / `verify` / `tamper`) — first intended usable developer release (`v0.1.0`) | **In development** (verify + sign; no tamper yet) |
+| **M1** | File-based reference lab (`sign` / `verify` / `tamper`) — first intended usable developer release (`v0.1.0`) | **In development** (sign/verify/tamper present; not a release) |
 | **M2** | Inspect + report | Planned |
 | **M3** | VMS/NVR preservation testing | Planned |
 | **M4** | Passive live RTSP verification | Planned |
@@ -114,7 +120,7 @@ vendored into this repository by default.
 * Platform baseline: Linux x86_64 / Ubuntu 24.04
 * Build: Meson + Ninja
 * Signing core: official ONVIF Media Signing (C API), unthreaded plugin
-* CLI binary: `video-trust` (`verify` and `sign` in the current tree)
+* CLI binary: `video-trust` (`verify`, `sign`, and `tamper` in the current tree)
 
 See [`docs/build.md`](docs/build.md) for configure/build/test/install steps.
 

@@ -18,6 +18,13 @@ test_sign_cli = executable(
   install: false,
 )
 
+test_tamper_cli = executable(
+  'test_tamper_cli',
+  'test_tamper_cli.cpp',
+  dependencies: videotrust_dep,
+  install: false,
+)
+
 verify_runner = find_program('bash')
 
 test(
@@ -50,6 +57,23 @@ test(
     + '"' + fixture_dir + '"',
   ],
   depends: [video_trust, oms_sign_annexb, test_sign_cli],
+  timeout: 180,
+  is_parallel: false,
+)
+
+test(
+  'tamper_integration',
+  verify_runner,
+  args: [
+    '-lc',
+    'set -euo pipefail; '
+    + 'OMS_SIGN_ANNEXB="' + oms_sign_annexb.full_path() + '" '
+    + '"' + gen_script + '" "' + fixture_dir + '"; '
+    + '"' + test_tamper_cli.full_path() + '" '
+    + '"' + video_trust.full_path() + '" '
+    + '"' + fixture_dir + '"',
+  ],
+  depends: [video_trust, oms_sign_annexb, test_tamper_cli],
   timeout: 180,
   is_parallel: false,
 )

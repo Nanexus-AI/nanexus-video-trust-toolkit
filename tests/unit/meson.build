@@ -39,3 +39,10 @@ test_sign = executable(
   dependencies: videotrust_dep,
 )
 test('sign_options_and_exit', test_sign)
+
+test_tamper = executable(
+  'test_tamper',
+  'test_tamper.cpp',
+  dependencies: videotrust_dep,
+)
+test('tamper_ops_and_classify', test_tamper)

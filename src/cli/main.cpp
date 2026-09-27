@@ -2,6 +2,7 @@
 #include "videotrust/render.hpp"
 #include "videotrust/result.hpp"
 #include "videotrust/sign.hpp"
+#include "videotrust/tamper.hpp"
 #include "videotrust/verify.hpp"
 
 #include <cstdlib>
@@ -17,13 +18,17 @@ void Usage(std::ostream& out) {
       << "  video-trust verify --codec h264|h265 [--ca PATH] [--json] <input.es>\n"
       << "  video-trust sign --codec h264|h265 --key KEY.pem --cert CHAIN.pem\n"
       << "                   -o OUTPUT.es [--force] [--quiet] <input.es>\n"
+      << "  video-trust tamper --codec h264|h265 --operation OP -o OUTPUT.es\n"
+      << "                    [--force] [--quiet] [--count N] <input.es>\n"
       << "\n"
+      << "Operations: corrupt-vcl | strip-signing-sei | truncate\n"
       << "Annex-B H.264/H.265 Media Signing reference-lab tooling.\n"
-      << "Signing does not establish camera/source authenticity.\n"
+      << "Tamper creates controlled test material; it is not a video editor.\n"
+      << "Signing/tampering does not establish camera/source authenticity.\n"
       << "\n"
       << "verify exit codes: 0 valid, 1 integrity fail, 2 usage/input, 3 runtime,\n"
       << "                  4 unsigned/not verifiable\n"
-      << "sign exit codes:  0 success, 2 usage/input/path/key/cert, 3 runtime\n";
+      << "sign/tamper exit:  0 success, 2 usage/input/path, 3 runtime\n";
 }
 
 struct CommonCodec {
@@ -44,6 +49,23 @@ bool ParseCodecValue(std::string_view v, videotrust::Codec& out, std::string& er
   return false;
 }
 
+bool ParseOperation(std::string_view v, videotrust::TamperOperation& out, std::string& err) {
+  if (v == "corrupt-vcl") {
+    out = videotrust::TamperOperation::CorruptVcl;
+    return true;
+  }
+  if (v == "strip-signing-sei") {
+    out = videotrust::TamperOperation::StripSigningSei;
+    return true;
+  }
+  if (v == "truncate") {
+    out = videotrust::TamperOperation::Truncate;
+    return true;
+  }
+  err = "unsupported operation (corrupt-vcl|strip-signing-sei|truncate)";
+  return false;
+}
+
 struct VerifyArgs {
   bool json{false};
   CommonCodec codec;
@@ -59,6 +81,18 @@ struct SignArgs {
   std::string input;
   bool force{false};
   bool quiet{false};
+};
+
+struct TamperArgs {
+  CommonCodec codec;
+  videotrust::TamperOperation operation{videotrust::TamperOperation::CorruptVcl};
+  bool operation_set{false};
+  std::string output;
+  std::string input;
+  bool force{false};
+  bool quiet{false};
+  std::size_t truncate_count{1};
+  bool truncate_count_set{false};
 };
 
 bool ParseVerifyArgs(int argc, char** argv, VerifyArgs& out, std::string& err) {
@@ -173,6 +207,90 @@ bool ParseSignArgs(int argc, char** argv, SignArgs& out, std::string& err) {
   return true;
 }
 
+bool ParseTamperArgs(int argc, char** argv, TamperArgs& out, std::string& err) {
+  std::vector<std::string> positionals;
+  for (int i = 2; i < argc; ++i) {
+    const std::string_view a(argv[i]);
+    if (a == "--force") {
+      out.force = true;
+    } else if (a == "--quiet" || a == "-q") {
+      out.quiet = true;
+    } else if (a == "--codec") {
+      if (i + 1 >= argc) {
+        err = "--codec requires a value";
+        return false;
+      }
+      if (!ParseCodecValue(argv[++i], out.codec.codec, err)) {
+        return false;
+      }
+      out.codec.set = true;
+    } else if (a == "--operation") {
+      if (i + 1 >= argc) {
+        err = "--operation requires a value";
+        return false;
+      }
+      if (!ParseOperation(argv[++i], out.operation, err)) {
+        return false;
+      }
+      out.operation_set = true;
+    } else if (a == "--count") {
+      if (i + 1 >= argc) {
+        err = "--count requires a positive integer";
+        return false;
+      }
+      const std::string v(argv[++i]);
+      try {
+        const int n = std::stoi(v);
+        if (n < 1) {
+          err = "--count must be >= 1";
+          return false;
+        }
+        out.truncate_count = static_cast<std::size_t>(n);
+        out.truncate_count_set = true;
+      } catch (...) {
+        err = "--count requires a positive integer";
+        return false;
+      }
+    } else if (a == "-o" || a == "--output") {
+      if (i + 1 >= argc) {
+        err = "-o/--output requires a path";
+        return false;
+      }
+      out.output = argv[++i];
+    } else if (a == "-h" || a == "--help") {
+      Usage(std::cout);
+      std::exit(0);
+    } else if (a.starts_with('-')) {
+      err = "unknown option: " + std::string(a);
+      return false;
+    } else {
+      positionals.emplace_back(a);
+    }
+  }
+  if (!out.codec.set) {
+    err = "required --codec h264|h265";
+    return false;
+  }
+  if (!out.operation_set) {
+    err = "required --operation corrupt-vcl|strip-signing-sei|truncate";
+    return false;
+  }
+  if (out.truncate_count_set && out.operation != videotrust::TamperOperation::Truncate) {
+    err = "--count is only valid with --operation truncate";
+    return false;
+  }
+  if (out.output.empty()) {
+    err = "required -o/--output <path>";
+    return false;
+  }
+  if (positionals.size() != 1) {
+    err = "exactly one input path is required";
+    return false;
+  }
+  out.input = positionals[0];
+  return true;
+}
+
 int RunVerify(const VerifyArgs& args) {
   videotrust::VerifyOptions opt;
   opt.codec = args.codec.codec;
@@ -231,6 +349,32 @@ int RunSign(const SignArgs& args) {
   return static_cast<int>(videotrust::ExitCode::Success);
 }
 
+int RunTamper(const TamperArgs& args) {
+  videotrust::TamperOptions opt;
+  opt.codec = args.codec.codec;
+  opt.operation = args.operation;
+  opt.input_path = args.input;
+  opt.output_path = args.output;
+  opt.force = args.force;
+  opt.truncate_nal_count = args.truncate_count;
+
+  const videotrust::Error err = videotrust::TamperAnnexBFile(opt);
+  if (err.code != videotrust::ErrorCode::Ok) {
+    std::cerr << "error: " << err.message << "\n";
+    return static_cast<int>(videotrust::ExitCodeForTamper(err));
+  }
+
+  if (!args.quiet) {
+    std::cout << "Tampered media written successfully\n"
+              << "Operation: " << videotrust::ToString(args.operation) << "\n"
+              << "Codec: "
+              << (args.codec.codec == videotrust::Codec::H265 ? "H.265" : "H.264")
+              << "\n"
+              << "Output: " << args.output << "\n";
+  }
+  return static_cast<int>(videotrust::ExitCode::Success);
+}
+
 }  // namespace
 
 int main(int argc, char** argv) {
@@ -265,8 +409,17 @@ int main(int argc, char** argv) {
     }
     return RunSign(args);
   }
+  if (cmd == "tamper") {
+    TamperArgs args;
+    if (!ParseTamperArgs(argc, argv, args, err)) {
+      std::cerr << "error: " << err << "\n";
+      Usage(std::cerr);
+      return static_cast<int>(videotrust::ExitCode::UsageOrInputError);
+    }
+    return RunTamper(args);
+  }
 
-  std::cerr << "error: unknown subcommand (use verify or sign)\n";
+  std::cerr << "error: unknown subcommand (use verify, sign, or tamper)\n";
   Usage(std::cerr);
   return static_cast<int>(videotrust::ExitCode::UsageOrInputError);
 }

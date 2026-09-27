@@ -2,7 +2,7 @@
 
 Contracts for the in-development `video-trust` CLI. M1 is **not** complete and
 there is **no** stable `v0.1.0` release yet. This milestone currently exposes
-**Annex-B `verify` and `sign`**. `tamper` is not implemented.
+**Annex-B `verify`, `sign`, and `tamper`**.
 
 ## Exit codes
 
@@ -14,12 +14,15 @@ there is **no** stable `v0.1.0` release yet. This milestone currently exposes
 | 1 | Verification completed with a negative integrity/authenticity result |
 | 2 | Invalid CLI, unsupported/malformed input, or parse/input error |
 | 3 | Runtime/internal/upstream failure |
-| 4 | Verification completed but media is unsigned or not verifiable |
+| 4 | Verification completed but media is unsigned, incomplete, or not verifiable |
 
 PARTIAL guidance (verify):
 
 * integrity evidence of failure → `1`
-* insufficient evidence / unverifiable → `4`
+* insufficient evidence / unverifiable / incomplete stream → `4`
+
+Truncated signed streams commonly report integrity `ok` with completeness
+`incomplete` → overall `PARTIAL`, exit `4`.
 
 ### Sign-specific
 
@@ -29,7 +32,15 @@ PARTIAL guidance (verify):
 | 2 | CLI / input / path / key / certificate / malformed-media / overwrite error |
 | 3 | Internal / runtime / upstream signing failure |
 
-Exit codes `1` and `4` are verification-specific and are **not** used by `sign`.
+### Tamper-specific
+
+| Code | Meaning |
+| --- | --- |
+| 0 | Tamper transformation completed successfully |
+| 2 | CLI / input / path / codec / operation / malformed / no suitable target / overwrite |
+| 3 | Internal / runtime failure |
+
+Exit codes `1` and `4` are verification-specific and are **not** used by `sign` or `tamper`.
 
 ## Trust axes (no single boolean)
 
@@ -73,15 +84,18 @@ Therefore M1:
 
 `VALID` is **not** derived from certificate/source trust alone.
 
-## Signing implementation notes
+## Implementation notes
 
 * Plugin: **unthreaded** ONVIF signing plugin (M1 default; not a permanent product guarantee).
-* Generated signing SEIs use upstream **emulation-prevention bytes** (`sei_epb=true`) so Annex-B start-code scanning does not split signature payloads.
-* `--cert` expects a PEM **certificate chain** (leaf … trust anchor). Upstream removes the anchor before embedding.
+* Generated signing SEIs use upstream **emulation-prevention bytes** (`sei_epb=true`).
+* `--cert` expects a PEM **certificate chain** (leaf … trust anchor).
+* Tamper operations: `corrupt-vcl`, `strip-signing-sei`, `truncate` (NAL-boundary; `--count N`).
+* ONVIF signing SEIs are identified by SEI payload type `5` (user_data_unregistered) plus the ONVIF Media Signing UUID from upstream `kUuidMediaSigning`. Unrelated SEIs are preserved.
+* `corrupt-vcl` mutates the first suitable VCL after an ONVIF signing SEI (falls back to first VCL if none).
 
 ## Stdout / stderr
 
-* **stdout**: human-readable verify result / JSON (`--json`); concise sign success text (unless `--quiet`)
+* **stdout**: human-readable verify result / JSON (`--json`); concise sign/tamper success text (unless `--quiet`)
 * **stderr**: usage errors, malformed input, runtime/upstream failures
 
 ## Key terminology

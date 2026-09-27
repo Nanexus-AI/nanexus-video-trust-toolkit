@@ -21,7 +21,9 @@ ExitCode ExitCodeForVerification(const VerificationResult& result) noexcept {
   if (result.media_signing == SigningPresence::NotDetected ||
       result.signature_integrity == SignatureIntegrity::NotApplicable ||
       result.signature_integrity == SignatureIntegrity::NotFeasible ||
-      result.completeness == VerificationCompleteness::NotFeasible) {
+      result.completeness == VerificationCompleteness::NotFeasible ||
+      result.completeness == VerificationCompleteness::Incomplete) {
+    // Incomplete (e.g. truncated signed stream) is insufficient evidence → 4.
     return ExitCode::UnsignedOrNotVerifiable;
   }
   if (IntegrityPositive(result.signature_integrity)) {

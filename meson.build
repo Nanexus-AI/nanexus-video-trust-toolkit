@@ -75,9 +75,11 @@ videotrust_core = static_library(
   files(
     'src/core/annexb.cpp',
     'src/core/error.cpp',
+    'src/core/nal_classify.cpp',
     'src/core/result.cpp',
     'src/render/render.cpp',
     'src/signing/sign.cpp',
+    'src/tamper/tamper.cpp',
     'src/upstream/session.cpp',
     'src/upstream/upstream_mapping.cpp',
     'src/verification/verify.cpp',

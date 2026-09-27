@@ -68,6 +68,18 @@ int main() {
     return fail("source authenticity string");
   }
 
+  VerificationResult incomplete;
+  incomplete.media_signing = SigningPresence::Detected;
+  incomplete.signature_integrity = SignatureIntegrity::Ok;
+  incomplete.continuity = ContinuityStatus::Intact;
+  incomplete.completeness = VerificationCompleteness::Incomplete;
+  if (ExitCodeForVerification(incomplete) != ExitCode::UnsignedOrNotVerifiable) {
+    return fail("incomplete should exit 4");
+  }
+  if (DeriveOverallState(incomplete) != OverallState::Partial) {
+    return fail("incomplete overall PARTIAL");
+  }
+
   std::cout << "PASS: result and exit codes\n";
   return 0;
 }
