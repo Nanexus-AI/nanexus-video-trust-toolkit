@@ -80,6 +80,14 @@ More detail: [`docs/build.md`](docs/build.md), [`docs/usage.md`](docs/usage.md),
 * Meson + Ninja + OpenSSL 3.x
 * Official ONVIF framework pin `r25.12.6` (unthreaded signing plugin)
 
+## Roadmap
+
+`v0.1.0` is the first file-based reference lab. The project is planned to
+evolve toward richer inspect/report surfaces, VMS/NVR preservation, passive
+RTSP verification, edge deployment, and native signing-camera integration.
+
+See [`docs/roadmap.md`](docs/roadmap.md) for the full M0–M8 roadmap.
+
 ## License
 
 Nanexus code: **Apache-2.0** (`LICENSE`, `NOTICE`).  
