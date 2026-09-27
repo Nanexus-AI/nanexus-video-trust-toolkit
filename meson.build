@@ -77,6 +77,7 @@ videotrust_core = static_library(
     'src/core/error.cpp',
     'src/core/result.cpp',
     'src/render/render.cpp',
+    'src/signing/sign.cpp',
     'src/upstream/session.cpp',
     'src/upstream/upstream_mapping.cpp',
     'src/verification/verify.cpp',

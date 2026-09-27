@@ -4,6 +4,7 @@
 #include "videotrust/result.hpp"
 
 #include <memory>
+#include <string>
 
 struct _onvif_media_signing_t;
 typedef struct _onvif_media_signing_t onvif_media_signing_t;
@@ -32,6 +33,15 @@ class MediaSigningSession {
   /// Reset to a pre-stream state (official onvif_media_signing_reset).
   /// Returns Error on failure; ErrorCode::Ok on success.
   Error Reset();
+
+  /// Load signing private key + certificate chain PEM (upstream key pair API).
+  /// |certificate_chain_pem| should include the trust anchor; upstream strips it
+  /// before embedding. Does not print or log PEM contents.
+  Error SetSigningKeyPair(const std::string& private_key_pem,
+                          const std::string& certificate_chain_pem);
+
+  /// Enable/disable EPB in generated signing SEIs (required true for Annex-B).
+  Error SetEmulationPreventionBeforeSigning(bool enable);
 
   Codec codec() const noexcept { return codec_; }
 

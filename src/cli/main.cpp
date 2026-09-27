@@ -1,10 +1,10 @@
 #include "videotrust/error.hpp"
 #include "videotrust/render.hpp"
 #include "videotrust/result.hpp"
+#include "videotrust/sign.hpp"
 #include "videotrust/verify.hpp"
 
 #include <cstdlib>
-#include <cstring>
 #include <iostream>
 #include <string>
 #include <string_view>
@@ -15,30 +15,53 @@ namespace {
 void Usage(std::ostream& out) {
   out << "Usage:\n"
       << "  video-trust verify --codec h264|h265 [--ca PATH] [--json] <input.es>\n"
+      << "  video-trust sign --codec h264|h265 --key KEY.pem --cert CHAIN.pem\n"
+      << "                   -o OUTPUT.es [--force] [--quiet] <input.es>\n"
       << "\n"
-      << "Verify ONVIF Media Signing on an Annex-B H.264/H.265 elementary stream.\n"
-      << "Exit codes: 0 success/valid, 1 integrity fail, 2 usage/input, 3 runtime, "
-         "4 unsigned/not verifiable\n";
+      << "Annex-B H.264/H.265 Media Signing reference-lab tooling.\n"
+      << "Signing does not establish camera/source authenticity.\n"
+      << "\n"
+      << "verify exit codes: 0 valid, 1 integrity fail, 2 usage/input, 3 runtime,\n"
+      << "                  4 unsigned/not verifiable\n"
+      << "sign exit codes:  0 success, 2 usage/input/path/key/cert, 3 runtime\n";
 }
 
-struct Args {
-  bool json{false};
+struct CommonCodec {
   videotrust::Codec codec{videotrust::Codec::H264};
-  bool codec_set{false};
+  bool set{false};
+};
+
+bool ParseCodecValue(std::string_view v, videotrust::Codec& out, std::string& err) {
+  if (v == "h264") {
+    out = videotrust::Codec::H264;
+    return true;
+  }
+  if (v == "h265") {
+    out = videotrust::Codec::H265;
+    return true;
+  }
+  err = "unsupported codec (use h264 or h265)";
+  return false;
+}
+
+struct VerifyArgs {
+  bool json{false};
+  CommonCodec codec;
   std::string ca;
   std::string input;
 };
 
-bool ParseArgs(int argc, char** argv, Args& out, std::string& err) {
-  if (argc < 2) {
-    err = "missing subcommand";
-    return false;
-  }
-  if (std::string_view(argv[1]) != "verify") {
-    err = "unknown subcommand (only 'verify' is implemented in this build)";
-    return false;
-  }
+struct SignArgs {
+  CommonCodec codec;
+  std::string key;
+  std::string cert;
+  std::string output;
+  std::string input;
+  bool force{false};
+  bool quiet{false};
+};
 
+bool ParseVerifyArgs(int argc, char** argv, VerifyArgs& out, std::string& err) {
   std::vector<std::string> positionals;
   for (int i = 2; i < argc; ++i) {
     const std::string_view a(argv[i]);
@@ -49,16 +72,10 @@ bool ParseArgs(int argc, char** argv, Args& out, std::string& err) {
         err = "--codec requires a value";
         return false;
       }
-      const std::string_view v(argv[++i]);
-      if (v == "h264") {
-        out.codec = videotrust::Codec::H264;
-      } else if (v == "h265") {
-        out.codec = videotrust::Codec::H265;
-      } else {
-        err = "unsupported codec (use h264 or h265)";
+      if (!ParseCodecValue(argv[++i], out.codec.codec, err)) {
         return false;
       }
-      out.codec_set = true;
+      out.codec.set = true;
     } else if (a == "--ca") {
       if (i + 1 >= argc) {
         err = "--ca requires a path";
@@ -75,8 +92,7 @@ bool ParseArgs(int argc, char** argv, Args& out, std::string& err) {
       positionals.emplace_back(a);
     }
   }
-
-  if (!out.codec_set) {
+  if (!out.codec.set) {
     err = "required --codec h264|h265";
     return false;
   }
@@ -88,19 +104,78 @@ bool ParseArgs(int argc, char** argv, Args& out, std::string& err) {
   return true;
 }
 
-}  // namespace
-
-int main(int argc, char** argv) {
-  Args args;
-  std::string err;
-  if (!ParseArgs(argc, argv, args, err)) {
-    std::cerr << "error: " << err << "\n";
-    Usage(std::cerr);
-    return static_cast<int>(videotrust::ExitCode::UsageOrInputError);
+bool ParseSignArgs(int argc, char** argv, SignArgs& out, std::string& err) {
+  std::vector<std::string> positionals;
+  for (int i = 2; i < argc; ++i) {
+    const std::string_view a(argv[i]);
+    if (a == "--force") {
+      out.force = true;
+    } else if (a == "--quiet" || a == "-q") {
+      out.quiet = true;
+    } else if (a == "--codec") {
+      if (i + 1 >= argc) {
+        err = "--codec requires a value";
+        return false;
+      }
+      if (!ParseCodecValue(argv[++i], out.codec.codec, err)) {
+        return false;
+      }
+      out.codec.set = true;
+    } else if (a == "--key") {
+      if (i + 1 >= argc) {
+        err = "--key requires a path";
+        return false;
+      }
+      out.key = argv[++i];
+    } else if (a == "--cert") {
+      if (i + 1 >= argc) {
+        err = "--cert requires a path";
+        return false;
+      }
+      out.cert = argv[++i];
+    } else if (a == "-o" || a == "--output") {
+      if (i + 1 >= argc) {
+        err = "-o/--output requires a path";
+        return false;
+      }
+      out.output = argv[++i];
+    } else if (a == "-h" || a == "--help") {
+      Usage(std::cout);
+      std::exit(0);
+    } else if (a.starts_with('-')) {
+      err = "unknown option: " + std::string(a);
+      return false;
+    } else {
+      positionals.emplace_back(a);
+    }
   }
+  if (!out.codec.set) {
+    err = "required --codec h264|h265";
+    return false;
+  }
+  if (out.key.empty()) {
+    err = "required --key <path>";
+    return false;
+  }
+  if (out.cert.empty()) {
+    err = "required --cert <path>";
+    return false;
+  }
+  if (out.output.empty()) {
+    err = "required -o/--output <path>";
+    return false;
+  }
+  if (positionals.size() != 1) {
+    err = "exactly one input path is required";
+    return false;
+  }
+  out.input = positionals[0];
+  return true;
+}
 
+int RunVerify(const VerifyArgs& args) {
   videotrust::VerifyOptions opt;
-  opt.codec = args.codec;
+  opt.codec = args.codec.codec;
   opt.input_path = args.input;
   opt.ca_pem_path = args.ca;
 
@@ -111,8 +186,8 @@ int main(int argc, char** argv) {
     using videotrust::ErrorCode;
     if (e.code == ErrorCode::ParseError || e.code == ErrorCode::InvalidArgument ||
         e.code == ErrorCode::IoFailure) {
-      // Missing file / malformed Annex-B → usage/input class.
-      if (e.code == ErrorCode::IoFailure && e.message.find("cannot open") != std::string::npos) {
+      if (e.code == ErrorCode::IoFailure &&
+          e.message.find("cannot open") != std::string::npos) {
         return static_cast<int>(videotrust::ExitCode::UsageOrInputError);
       }
       if (e.code == ErrorCode::ParseError || e.code == ErrorCode::InvalidArgument) {
@@ -129,4 +204,69 @@ int main(int argc, char** argv) {
     std::cout << videotrust::RenderText(result.value());
   }
   return static_cast<int>(videotrust::ExitCodeForVerification(result.value()));
+}
+
+int RunSign(const SignArgs& args) {
+  videotrust::SignOptions opt;
+  opt.codec = args.codec.codec;
+  opt.input_path = args.input;
+  opt.output_path = args.output;
+  opt.key_pem_path = args.key;
+  opt.cert_pem_path = args.cert;
+  opt.force = args.force;
+
+  const videotrust::Error err = videotrust::SignAnnexBFile(opt);
+  if (err.code != videotrust::ErrorCode::Ok) {
+    std::cerr << "error: " << err.message << "\n";
+    return static_cast<int>(videotrust::ExitCodeForSign(err));
+  }
+
+  if (!args.quiet) {
+    std::cout << "Signed media written successfully\n"
+              << "Codec: "
+              << (args.codec.codec == videotrust::Codec::H265 ? "H.265" : "H.264")
+              << "\n"
+              << "Output: " << args.output << "\n";
+  }
+  return static_cast<int>(videotrust::ExitCode::Success);
+}
+
+}  // namespace
+
+int main(int argc, char** argv) {
+  if (argc < 2) {
+    std::cerr << "error: missing subcommand\n";
+    Usage(std::cerr);
+    return static_cast<int>(videotrust::ExitCode::UsageOrInputError);
+  }
+
+  const std::string_view cmd(argv[1]);
+  if (cmd == "-h" || cmd == "--help") {
+    Usage(std::cout);
+    return 0;
+  }
+
+  std::string err;
+  if (cmd == "verify") {
+    VerifyArgs args;
+    if (!ParseVerifyArgs(argc, argv, args, err)) {
+      std::cerr << "error: " << err << "\n";
+      Usage(std::cerr);
+      return static_cast<int>(videotrust::ExitCode::UsageOrInputError);
+    }
+    return RunVerify(args);
+  }
+  if (cmd == "sign") {
+    SignArgs args;
+    if (!ParseSignArgs(argc, argv, args, err)) {
+      std::cerr << "error: " << err << "\n";
+      Usage(std::cerr);
+      return static_cast<int>(videotrust::ExitCode::UsageOrInputError);
+    }
+    return RunSign(args);
+  }
+
+  std::cerr << "error: unknown subcommand (use verify or sign)\n";
+  Usage(std::cerr);
+  return static_cast<int>(videotrust::ExitCode::UsageOrInputError);
 }

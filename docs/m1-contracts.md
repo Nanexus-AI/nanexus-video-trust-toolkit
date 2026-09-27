@@ -2,9 +2,11 @@
 
 Contracts for the in-development `video-trust` CLI. M1 is **not** complete and
 there is **no** stable `v0.1.0` release yet. This milestone currently exposes
-**Annex-B verify only** (`sign` / `tamper` are not implemented).
+**Annex-B `verify` and `sign`**. `tamper` is not implemented.
 
 ## Exit codes
+
+### Shared / verify
 
 | Code | Meaning |
 | --- | --- |
@@ -14,10 +16,20 @@ there is **no** stable `v0.1.0` release yet. This milestone currently exposes
 | 3 | Runtime/internal/upstream failure |
 | 4 | Verification completed but media is unsigned or not verifiable |
 
-PARTIAL guidance:
+PARTIAL guidance (verify):
 
 * integrity evidence of failure → `1`
 * insufficient evidence / unverifiable → `4`
+
+### Sign-specific
+
+| Code | Meaning |
+| --- | --- |
+| 0 | Signing completed successfully |
+| 2 | CLI / input / path / key / certificate / malformed-media / overwrite error |
+| 3 | Internal / runtime / upstream signing failure |
+
+Exit codes `1` and `4` are verification-specific and are **not** used by `sign`.
 
 ## Trust axes (no single boolean)
 
@@ -32,12 +44,14 @@ Verification results separate:
 
 Valid signature ≠ trusted certificate ≠ known signer ≠ established source authenticity.
 
+M1 `sign` is reference-lab signing. It does **not** establish that media was
+signed by a camera sensor or manufacturer-controlled hardware.
+
 ### Source authenticity decision
 
 Upstream `OMS_PROVENANCE_*` validates the **signing public key / certificate
 chain against a trust anchor**. That is certificate-axis evidence, not camera
-or device source identity. Mapping provenance into a `SourceAuthenticity::ProvenanceOk`
-(or similar) state would overclaim.
+or device source identity.
 
 Therefore M1:
 
@@ -59,9 +73,15 @@ Therefore M1:
 
 `VALID` is **not** derived from certificate/source trust alone.
 
+## Signing implementation notes
+
+* Plugin: **unthreaded** ONVIF signing plugin (M1 default; not a permanent product guarantee).
+* Generated signing SEIs use upstream **emulation-prevention bytes** (`sei_epb=true`) so Annex-B start-code scanning does not split signature payloads.
+* `--cert` expects a PEM **certificate chain** (leaf … trust anchor). Upstream removes the anchor before embedding.
+
 ## Stdout / stderr
 
-* **stdout**: human-readable result, or JSON only when `--json`
+* **stdout**: human-readable verify result / JSON (`--json`); concise sign success text (unless `--quiet`)
 * **stderr**: usage errors, malformed input, runtime/upstream failures
 
 ## Key terminology

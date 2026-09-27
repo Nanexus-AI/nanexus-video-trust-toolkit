@@ -1,8 +1,8 @@
 # Building Nanexus Video Trust Toolkit (M1 in development)
 
 This repository provides a C++20 Trust Core and an in-development `video-trust`
-CLI. Current CLI capability: **Annex-B verify** for H.264/H.265 elementary
-streams. `sign` and `tamper` are not implemented yet. There is no stable release.
+CLI. Current CLI capability: **Annex-B `verify` and `sign`** for H.264/H.265
+elementary streams. `tamper` is not implemented yet. There is no stable release.
 
 ## Requirements
 
@@ -39,20 +39,30 @@ meson test -C build/nanexus
 meson install -C build/nanexus   # installs the video-trust binary
 ```
 
-## Example: verify Annex-B
+## Example: sign then verify
 
 ```bash
-video-trust verify --codec h264 input.h264
-video-trust verify --codec h265 --ca ca.pem --json input.h265
+# --cert is a PEM chain: leaf certificate … trust anchor (CA).
+video-trust sign \
+  --codec h264 \
+  --key signer-key.pem \
+  --cert signer-chain.pem \
+  -o signed.h264 \
+  input.h264
+
+video-trust verify --codec h264 --ca ca.pem signed.h264
+video-trust verify --codec h265 --ca ca.pem --json signed.h265
 ```
+
+Use `--force` to overwrite an existing output. Signing is reference-lab only and
+does **not** establish camera/source authenticity.
 
 Exit codes and trust axes: [`m1-contracts.md`](m1-contracts.md).
 
 ## Test fixtures
 
 Integration tests generate synthetic Annex-B streams and a test-only PKI via
-`scripts/gen-verify-fixtures.sh`. Signed fixtures are produced with the
-test helper `oms_sign_annexb` (official ONVIF C API), not a Nanexus sign
-product command.
+`scripts/gen-verify-fixtures.sh`. Do not treat generated keys as production
+identity material.
 
 See also [`upstream-media-signing.md`](upstream-media-signing.md).

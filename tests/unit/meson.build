@@ -32,3 +32,10 @@ test_render = executable(
   dependencies: videotrust_dep,
 )
 test('render_text_json', test_render)
+
+test_sign = executable(
+  'test_sign',
+  'test_sign.cpp',
+  dependencies: videotrust_dep,
+)
+test('sign_options_and_exit', test_sign)
