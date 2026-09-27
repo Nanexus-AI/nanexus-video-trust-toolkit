@@ -1,0 +1,44 @@
+# Build / install trees
+/build/
+/build_*/
+/my_installs/
+/prefix/
+**/meson-private/
+**/meson-logs/
+
+# Upstream local checkout (fetched, not vendored by default)
+/third_party/media-signing-framework/
+
+# Secrets / keys
+*.pem
+*.key
+*.p12
+*.pfx
+!.gitkeep
+.env
+.env.*
+
+# Editor / OS
+.DS_Store
+*.swp
+*~
+.vscode/
+.idea/
+
+# Local scratch directories (must not be committed)
+/openspec/
+/evidence/
+/.agents/
+
+# Generated evidence-like outputs
+validation_results.txt
+signed_*.mp4
+*.log
+
+# Compiled
+*.o
+*.a
+*.so
+*.so.*
+*.dylib
+*.exe

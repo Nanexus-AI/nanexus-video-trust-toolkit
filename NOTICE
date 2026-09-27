@@ -1,0 +1,14 @@
+Nanexus Video Trust Toolkit
+Copyright 2026 Nanexus-AI contributors
+
+This product includes software developed for the Nanexus Video Trust Toolkit project.
+Licensed under the Apache License, Version 2.0. See LICENSE.
+
+---------------------------------------------------------------------------
+Third-party software
+
+This project intends to use the ONVIF Media Signing Framework as an upstream
+dependency (MIT License, Copyright (c) 2025 ONVIF). Upstream sources are fetched
+separately and are not vendored into this repository by default. See
+docs/upstream-media-signing.md and third_party/README.md.
+---------------------------------------------------------------------------
