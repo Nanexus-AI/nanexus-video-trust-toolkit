@@ -138,6 +138,8 @@ def test_core_package_does_not_import_the_harness() -> None:
         assert "tests.eval" not in text
         assert "langgraph" not in text.lower()
         assert "ollama" not in text.lower()
+        assert "openai" not in text.lower()
+        assert "anthropic" not in text.lower()
 
 
 def test_scripted_call_can_use_mcp_stdio(tmp_path: Path) -> None:

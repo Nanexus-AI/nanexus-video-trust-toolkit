@@ -24,19 +24,28 @@ Pass an executor when the scripted calls should go through MCP stdio to
 the Nanexus tools. The executor fills the capability envelope. The script
 still supplies the conclusions, so the scorer stays deterministic.
 
-## Future slots
+## Live drivers
 
-These runtimes are not dependencies of the capability core or the MCP
-server. A later driver would implement `EvalDriver`, speak MCP stdio to
-`python -m nanexus_video_trust_agent.mcp_server`, and return an
-`EvalTranscript`.
+`OllamaChatDriver` and `CodexExecDriver` implement the same `EvalDriver`
+protocol. Both talk to `python -m nanexus_video_trust_agent.mcp_server`.
+Neither driver is imported by the capability service or the MCP server.
+Ollama and the Codex CLI are external runtimes. This package does not
+install them and does not take a provider SDK dependency.
 
-| Slot | Possible external runtime | Not chosen here |
-| --- | --- | --- |
-| `frontier` | A cloud Agent or model API with MCP tool calling | No provider SDK |
-| `mid` | A smaller hosted or local tool-calling runtime | No default |
-| `small` | A local runtime such as Ollama or llama.cpp, if it can call MCP tools | Neither is the product architecture |
+A live run uses the unchanged T01–T09 corpus. The driver adds the
+fixture paths for that run and asks for one test-only JSON object so
+`score()` can read stated conclusions. The object is not a product
+capability. `score()` does not call a model.
 
-The scorer never branches on provider, model name, or tier. Those may be
-stored later as transcript metadata. Vendor SDKs stay outside
-`nanexus_video_trust_agent`.
+Raw transcripts stay out of this repository. Point `--evidence-dir` at a
+private directory.
+
+```bash
+uv run --python 3.12 python -m tests.eval.run_live \
+  --driver both \
+  --fixture-root /tmp/nanexus-eval-fixtures \
+  --evidence-dir /path/outside/this/repo
+```
+
+The scorer never branches on provider, model name, or tier. Vendor SDKs
+stay outside `nanexus_video_trust_agent`.
