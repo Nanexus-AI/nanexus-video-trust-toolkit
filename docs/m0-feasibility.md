@@ -10,13 +10,18 @@ M0 is a **feasibility spike**, not a product release.
 ## Demonstrations
 
 ```text
-unsigned H.264  → official sign → official verify PASS
-unsigned H.265  → official sign → official verify PASS
-signed stream   → controlled corruption → official validator detects/classifies failure
+Pinned official upstream (tag r25.12.6)
+        ↓
+reproducible Meson/Ninja build
+        ↓
+official H.264 signer → official validator PASS
+        ↓
+official H.265 signer → official validator PASS
+        ↓
+controlled tamper → official validator detects / correctly classifies
+        ↓
+API/lifecycle assessment → M0 Gate
 ```
-
-Plus: reproducible upstream build, and enough API/lifecycle understanding to judge a
-clean C++20 wrapper.
 
 ## Feasibility checks
 
@@ -30,13 +35,26 @@ clean C++20 wrapper.
 
 Gates are not weakened merely to force a PASS.
 
+## First controlled-tamper method (pre-design)
+
+**Selected primary method:** deterministic **video NAL payload byte corruption**.
+
+* Start from a known-good officially signed H.264 (or H.265) file that already validates PASS.
+* Locate a hashable VCL NAL (primary coded slice), preserve start-code and NAL header bytes, flip one or more payload bytes at a fixed offset.
+* Re-run the official validator with the same trusted CA.
+
+**Expected outcome:** authenticity **not** OK — preferably `OMS_AUTHENTICITY_NOT_OK` (validation string may show `N` for affected NAL Units). Full authenticity OK is a M0 tamper-detection FAIL.
+
+**Rationale:** keeps enough bitstream structure for the validator to process the stream; targets integrity hashing rather than decoder display behavior; reproducible; more unambiguous than SEI removal (which may classify as `OMS_NOT_SIGNED`).
+
+**Fallback / optional second case:** remove ONVIF Media Signing SEI NAL Units from a known-good signed stream; expect the validator **not** to report full authenticity OK (for example `OMS_NOT_SIGNED` or not-feasible). Use only if primary corruption fails to yield an interpretable result.
+
 ## Execution outline
 
-1. Install Ubuntu packages for Meson, Ninja, OpenSSL, libcheck, GStreamer development files
 2. Fetch upstream at the pin in `docs/upstream-media-signing.md`
 3. Build library (+ tests) and, separately, example apps with a local install prefix
 4. Run official signer/validator on upstream H.264 and H.265 fixtures
-5. Corrupt a known-good signed stream in a controlled way; re-validate
+5. Apply the selected controlled tamper; re-validate
 
 ## Out of scope for M0
 

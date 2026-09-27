@@ -5,19 +5,30 @@
 | Field | Value |
 | --- | --- |
 | Upstream | https://github.com/onvif/media-signing-framework |
-| Recommended pin | tag **`r25.12.6`** |
+| **Approved pin** | tag **`r25.12.6`** |
 | Commit (peeled) | `cf7785ab993c18d921094e8e505c2c34a1350f28` |
-| Upstream meson `version` at pin | `25.12.6` |
+| **media-signing-framework project/release version** at pin | `25.12.6` (from upstream `project(... version : ...)` / `ONVIF_MEDIA_SIGNING_VERSION`) |
 | License | MIT (Copyright (c) 2025 ONVIF) |
 | Fetch helper | `./scripts/fetch-upstream.sh` |
 
-Observed upstream `HEAD` at pin selection time (not the pin):
-`b82fddc67803a2a625c9131da1ed9d83995f8e45` (meson version `26.6.1`, 2026-09-21).
-Prefer the tagged release for M0 reproducibility unless a HEAD-only fix is required.
+### Version terminology
+
+Do **not** confuse:
+
+* **media-signing-framework project/release version** — the ONVIF library/release identifier (for example `25.12.6` at tag `r25.12.6`, or unreleased `26.6.1` on current upstream `master`).
+* **Meson build-system tool version** — the host `meson` program used to configure the build (for example `1.3.x` from Ubuntu packages or `1.12.x` from a project tool venv). This is independent of the upstream project version.
+
+### Pin decision
+
+* **No official release tag newer than `r25.12.6`** existed when this pin was chosen.
+* Current upstream `HEAD` (`master`): `b82fddc67803a2a625c9131da1ed9d83995f8e45` declares unreleased project version **`26.6.1`** (not a Git tag).
+* Material unreleased change on HEAD vs `r25.12.6`: PR #237 adjusts validator authenticity when arbitrary TLV data appears together with other tags; plus docs/test-file/CI housekeeping. Public C API headers are unchanged.
+* Prefer a **stable official release/tag** for M0 reproducibility. Unreleased `26.6.1` is **not** required for the planned M0 sign/verify/tamper path.
+* **Rejected alternatives:** pin to untagged `HEAD` / `26.6.1` solely because it is newer; pin to older `v1.0.2` (superseded by `r25.12.x` calendar releases).
 
 ## Build system
 
-* Meson (>= 0.49) + Ninja
+* Build tools: **Meson** (tool, `>= 0.49`) + **Ninja**
 * Mandatory: OpenSSL >= 3.0 (`pkg-config openssl`)
 * Optional: libcheck (unit tests), GLib (threaded signing plugin), GStreamer (example apps)
 * Default signing plugin: **unthreaded**

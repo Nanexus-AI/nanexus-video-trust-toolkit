@@ -2,6 +2,10 @@
 # Fetch the pinned ONVIF media-signing-framework revision into third_party/.
 # The checkout is local working material by default and should not be committed
 # unless a later, license-reviewed decision explicitly vendors it.
+#
+# Pin: tag r25.12.6
+# media-signing-framework project/release version at pin: 25.12.6
+# (This is NOT the Meson build-system tool version.)
 set -euo pipefail
 
 ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"

@@ -8,6 +8,11 @@ for future releases. **M0 is not a release.**
 
 ## [Unreleased]
 
+### Changed
+
+- Clarified media-signing-framework project/release version vs Meson build-tool version in upstream docs
+- Documented approved upstream pin `r25.12.6` and first M0 controlled-tamper method
+
 ### Added
 
 - Initial repository bootstrap for Nanexus Video Trust Toolkit
