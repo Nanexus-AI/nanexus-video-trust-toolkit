@@ -2,6 +2,7 @@
 
 **Status:** Complete — feasibility checks PASS.  
 **M0 is a feasibility spike**, not ONVIF conformance, certification, or a product release.
+**Stable end-user release:** none. First intended usable developer release: **M1 / v0.1.0**.
 
 ## Upstream baseline
 
@@ -68,3 +69,5 @@ cryptography or SEI/hash-chain mechanics.
 
 **M0 RESULT: PASS**
 
+M0 is closed as a feasibility milestone. M1 / `v0.1.0` is the next planned work and
+is **not** started here.

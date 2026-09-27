@@ -32,6 +32,9 @@ The Nanexus layer must use the official Media Signing implementation for:
 ## Milestone posture
 
 * **M0** — feasibility spike against the official framework (build, H.264/H.265
-  sign→verify, controlled tamper classification, API understanding).
-* **M1** — first intended release: file-based reference lab around sign / verify /
-  tamper with structured results and CI.
+  sign→verify, controlled tamper classification, API understanding). **Complete.**
+* **M1** — first intended usable developer release (`v0.1.0`): file-based reference
+  lab around sign / verify / tamper with structured results and CI. **Next; not started.**
+
+See [`roadmap.md`](roadmap.md). This project is independent open-source work that
+uses the ONVIF Media Signing framework; it is not an official ONVIF project.

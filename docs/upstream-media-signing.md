@@ -21,9 +21,9 @@ Do **not** confuse:
 ### Pin decision
 
 * **No official release tag newer than `r25.12.6`** existed when this pin was chosen.
-* Current upstream `HEAD` (`master`): `b82fddc67803a2a625c9131da1ed9d83995f8e45` declares unreleased project version **`26.6.1`** (not a Git tag).
-* Material unreleased change on HEAD vs `r25.12.6`: PR #237 adjusts validator authenticity when arbitrary TLV data appears together with other tags; plus docs/test-file/CI housekeeping. Public C API headers are unchanged.
-* Prefer a **stable official release/tag** for M0 reproducibility. Unreleased `26.6.1` is **not** required for the planned M0 sign/verify/tamper path.
+* Upstream `master` at that time (`b82fddc67803a2a625c9131da1ed9d83995f8e45`) declared unreleased project version **`26.6.1`** (not a Git tag).
+* Material unreleased change on that `HEAD` vs `r25.12.6`: PR #237 adjusts validator authenticity when arbitrary TLV data appears together with other tags; plus docs/test-file/CI housekeeping. Public C API headers were unchanged.
+* Prefer a **stable official release/tag** for M0 reproducibility. Unreleased `26.6.1` was **not** required for the planned M0 sign/verify/tamper path.
 * **Rejected alternatives:** pin to untagged `HEAD` / `26.6.1` solely because it is newer; pin to older `v1.0.2` (superseded by `r25.12.x` calendar releases).
 
 ## Build system
