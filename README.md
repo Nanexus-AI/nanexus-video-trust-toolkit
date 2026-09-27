@@ -11,17 +11,13 @@ built on the official ONVIF Media Signing Framework.
 ```text
 Project Status:              Experimental / Pre-release
 M0 Feasibility:              Complete
-M1 File-based reference lab: v0.1.0 package frozen (tag/Release pending approval)
+M1 File-based reference lab: Complete — v0.1.0 first developer release
 Stable production release:   None
 ```
 
-M1 is the first usable **developer** reference lab. Product version metadata is
-`0.1.0`. The Git tag `v0.1.0` and GitHub Release are created only after final
-human approval; until then this tree is the release candidate package.
-
-> **Wording choice:** README does **not** claim the GitHub Release already
-> exists. After the annotated tag and Release are published, a small follow-up
-> documentation commit may update this status block to “v0.1.0 released”.
+`v0.1.0` is the first usable **developer** release (GitHub Pre-release). Product
+version metadata is `0.1.0`. This is experimental software — not a stable
+end-user product.
 
 ## What it is
 
