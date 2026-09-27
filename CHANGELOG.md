@@ -10,11 +10,12 @@ for future releases. **M0 is not a release.**
 
 ### Changed
 
+- Updated public M0 feasibility findings with execution results at pin `r25.12.6`
 - Clarified media-signing-framework project/release version vs Meson build-tool version in upstream docs
 - Documented approved upstream pin `r25.12.6` and first M0 controlled-tamper method
 
 ### Added
 
 - Initial repository bootstrap for Nanexus Video Trust Toolkit
-- Documentation for architecture, upstream Media Signing pin, and M0 feasibility plan
+- Documentation for architecture, upstream Media Signing pin, and M0 feasibility findings
 - Helper script to fetch the pinned ONVIF `media-signing-framework` revision
