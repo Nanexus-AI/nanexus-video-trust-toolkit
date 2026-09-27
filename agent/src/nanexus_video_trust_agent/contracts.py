@@ -19,6 +19,7 @@ CONTRACT_VERSION = "0.1"
 CAPABILITY_VERSION = "0.1"
 CORE_NAME = "video-trust"
 VERIFY_FILE_CAPABILITY = "video_trust.verify_file"
+ASSESS_VIDEO_INTEGRITY_CAPABILITY = "video_trust.assess_video_integrity"
 
 _CONTROL_CHARACTERS = ("\x00", "\n", "\r")
 
@@ -204,6 +205,43 @@ class Limitation(BaseModel):
     message: str
 
 
+class IntegrityAssessment(str, Enum):
+    signing_integrity_intact = "signing_integrity_intact"
+    signing_integrity_failed = "signing_integrity_failed"
+    no_media_signing = "no_media_signing"
+    partial_evidence = "partial_evidence"
+    not_verifiable = "not_verifiable"
+
+
+class TrustAssessment(str, Enum):
+    certificate_trust_not_evaluated = "certificate_trust_not_evaluated"
+    signing_key_validated_against_trust_anchor = "signing_key_validated_against_trust_anchor"
+    signing_key_not_trusted = "signing_key_not_trusted"
+    certificate_provenance_not_feasible = "certificate_provenance_not_feasible"
+    certificate_provenance_without_trusted_anchor = "certificate_provenance_without_trusted_anchor"
+
+
+class FollowUpHint(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+
+    code: str
+    message: str
+
+
+class IntegrityAssessmentResult(BaseModel):
+    """Deterministic L2 view of one verification document.
+
+    `verification` is that document. It is not a second core execution.
+    """
+
+    model_config = ConfigDict(extra="forbid")
+
+    verification: VerificationDocument
+    integrity_assessment: IntegrityAssessment
+    trust_assessment: TrustAssessment
+    follow_up_hints: list[FollowUpHint]
+
+
 class Evidence(BaseModel):
     """Execution evidence. SHA-256 identifies bytes read by this layer.
 
@@ -259,7 +297,7 @@ class CapabilityEnvelope(BaseModel):
     capability_level: CapabilityLevel
     safety_level: Literal["read"] = "read"
     execution_status: ExecutionStatus
-    result: VerificationDocument | None = None
+    result: VerificationDocument | IntegrityAssessmentResult | None = None
     evidence: Evidence
     limitations: list[Limitation] = Field(default_factory=list)
     errors: list[CapabilityError] = Field(default_factory=list)

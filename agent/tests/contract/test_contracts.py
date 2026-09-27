@@ -56,6 +56,7 @@ def _document() -> dict:
 
 def test_package_imports_without_mcp() -> None:
     sys.modules.pop("mcp", None)
+    import nanexus_video_trust_agent.capabilities  # noqa: F401
     import nanexus_video_trust_agent.contracts  # noqa: F401
     import nanexus_video_trust_agent.core_client  # noqa: F401
     import nanexus_video_trust_agent.policy  # noqa: F401
