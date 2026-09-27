@@ -1,58 +1,70 @@
-# Building Nanexus Video Trust Toolkit (M1 in development)
+# Building Nanexus Video Trust Toolkit (M1)
 
-This repository provides a C++20 Trust Core and an in-development `video-trust`
-CLI. Current CLI capability: **Annex-B `verify`, `sign`, and `tamper`** for
-H.264/H.265 elementary streams. There is no stable release.
+Experimental / pre-release. Annex-B `verify` / `sign` / `tamper` for H.264 and
+H.265. No stable release tag yet.
 
-## Requirements
+## Supported platform
 
-* Linux x86_64 (Ubuntu 24.04 baseline)
-* C++20 compiler (GCC 13 tested)
-* Meson (>= 0.61) and Ninja
-* OpenSSL 3.x (`pkg-config openssl`)
-* ffmpeg (optional; used by fixture generation for tests)
-* Network access once to fetch the pinned ONVIF framework
+* Linux x86_64
+* Ubuntu 24.04 baseline
+* **GCC** C++20 required for M1 (Clang is not part of required CI)
 
-## ONVIF dependency model
+## Packages (Ubuntu)
+
+```bash
+sudo apt-get install -y build-essential pkg-config meson ninja-build \
+  libssl-dev ffmpeg git ca-certificates
+```
+
+* **ffmpeg** is used by test fixture generation (not required to run a
+  pre-built `video-trust` binary against your own Annex-B files).
+* **OpenSSL 3.x** via `libssl-dev` / `pkg-config openssl`.
+
+## ONVIF dependency
+
+The official [Media Signing Framework](https://github.com/onvif/media-signing-framework)
+is fetched and installed into a **local prefix** (gitignored). It is not vendored
+into git by default.
+
+```text
+tag:    r25.12.6
+commit: cf7785ab993c18d921094e8e505c2c34a1350f28
+plugin: unthreaded
+```
 
 ```bash
 ./scripts/fetch-upstream.sh
-./scripts/build-upstream.sh          # installs to .oms-prefix by default
+./scripts/build-upstream.sh
+# default install: $PWD/.oms-prefix
 ```
 
-Pin: tag `r25.12.6` / commit `cf7785ab993c18d921094e8e505c2c34a1350f28`, unthreaded plugin.
+Optional: `OMS_PREFIX=/some/prefix ./scripts/build-upstream.sh`
 
-## Configure, build, test, install
+## Configure / build / test / install
 
 ```bash
 meson setup build/nanexus -Doms_prefix="$PWD/.oms-prefix"
 meson compile -C build/nanexus
 meson test -C build/nanexus
-meson install -C build/nanexus
+meson install -C build/nanexus   # installs video-trust (typically to /usr/local/bin)
 ```
 
-## Example: sign → tamper → verify
+`oms_prefix` points Meson at the ONVIF headers and shared library. The link uses
+an rpath to that prefix for local runs.
+
+Installed user-facing artifact: **`video-trust`** only (no public SDK headers).
+
+## CLI version
 
 ```bash
-video-trust sign \
-  --codec h264 \
-  --key signer-key.pem \
-  --cert signer-chain.pem \
-  -o signed.h264 \
-  input.h264
-
-video-trust tamper \
-  --codec h264 \
-  --operation corrupt-vcl \
-  -o tampered.h264 \
-  signed.h264
-
-video-trust verify --codec h264 --ca ca.pem tampered.h264
+video-trust --version
 ```
 
-Tamper operations intentionally create controlled test material. They are not a
-general media editor. M1 signing does **not** establish camera/source authenticity.
+Version matches the Meson project version (`0.1.0` while preparing the first tag).
 
-Operations: `corrupt-vcl`, `strip-signing-sei`, `truncate` (optional `--count N`).
+## Next
 
-Contracts: [`m1-contracts.md`](m1-contracts.md).
+* [`usage.md`](usage.md) — command examples
+* [`m1-contracts.md`](m1-contracts.md) — exit codes and trust semantics
+* [`json-v0.1.md`](json-v0.1.md) — JSON contract
+* [`fixtures.md`](fixtures.md) — test media provenance

@@ -1,0 +1,58 @@
+name: ci
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ci-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  ubuntu-gcc:
+    name: Ubuntu x86_64 / GCC
+    runs-on: ubuntu-24.04
+    timeout-minutes: 45
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Install packages
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y --no-install-recommends \
+            build-essential \
+            pkg-config \
+            meson \
+            ninja-build \
+            libssl-dev \
+            ffmpeg \
+            git \
+            ca-certificates
+
+      - name: Fetch pinned ONVIF Media Signing Framework
+        run: ./scripts/fetch-upstream.sh
+
+      - name: Build/install ONVIF framework (unthreaded)
+        run: ./scripts/build-upstream.sh
+
+      - name: Configure Nanexus
+        run: meson setup build/nanexus -Doms_prefix="$PWD/.oms-prefix"
+
+      - name: Compile
+        run: meson compile -C build/nanexus
+
+      - name: Test
+        run: meson test -C build/nanexus --print-errorlogs
+
+      - name: Install smoke (DESTDIR)
+        run: |
+          DESTDIR="$PWD/destdir" meson install -C build/nanexus
+          test -x destdir/usr/local/bin/video-trust
+          destdir/usr/local/bin/video-trust --version
+          destdir/usr/local/bin/video-trust --help >/dev/null

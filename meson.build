@@ -99,6 +99,7 @@ video_trust = executable(
   'video-trust',
   'src/cli/main.cpp',
   dependencies: videotrust_dep,
+  cpp_args: ['-DVIDEO_TRUST_VERSION="' + meson.project_version() + '"'],
   install: true,
 )
 

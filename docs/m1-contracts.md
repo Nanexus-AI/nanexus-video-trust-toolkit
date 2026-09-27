@@ -91,7 +91,20 @@ Therefore M1:
 * `--cert` expects a PEM **certificate chain** (leaf … trust anchor).
 * Tamper operations: `corrupt-vcl`, `strip-signing-sei`, `truncate` (NAL-boundary; `--count N`).
 * ONVIF signing SEIs are identified by SEI payload type `5` (user_data_unregistered) plus the ONVIF Media Signing UUID from upstream `kUuidMediaSigning`. Unrelated SEIs are preserved.
-* `corrupt-vcl` mutates the first suitable VCL after an ONVIF signing SEI (falls back to first VCL if none).
+* `corrupt-vcl` mutates the first suitable VCL **after** an ONVIF signing SEI when available (falls back to the first VCL). Mutating media only before signing metadata is present can yield upstream `not_feasible` instead of a clean integrity failure.
+
+## Observed M1 tamper → verify results
+
+Both H.264 and H.265 (with matching test CA on verify):
+
+| Operation | overall | integrity | completeness | exit |
+| --- | --- | --- | --- | --- |
+| `corrupt-vcl` | `INVALID` | `not_ok` | `complete` | 1 |
+| `strip-signing-sei` | `UNSIGNED` | `not_applicable` | `incomplete` | 4 |
+| `truncate` (`--count` ≥ 1) | `PARTIAL` | `ok` | `incomplete` | 4 |
+
+Tamper success means the transformation was applied — not that verification failed.
+Always run `video-trust verify` separately.
 
 ## Stdout / stderr
 

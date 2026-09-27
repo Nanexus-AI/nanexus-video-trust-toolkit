@@ -13,21 +13,27 @@
 
 namespace {
 
+#ifndef VIDEO_TRUST_VERSION
+#define VIDEO_TRUST_VERSION "0.1.0"
+#endif
+
 void Usage(std::ostream& out) {
-  out << "Usage:\n"
+  out << "video-trust " << VIDEO_TRUST_VERSION << "\n"
+      << "Usage:\n"
       << "  video-trust verify --codec h264|h265 [--ca PATH] [--json] <input.es>\n"
       << "  video-trust sign --codec h264|h265 --key KEY.pem --cert CHAIN.pem\n"
       << "                   -o OUTPUT.es [--force] [--quiet] <input.es>\n"
       << "  video-trust tamper --codec h264|h265 --operation OP -o OUTPUT.es\n"
       << "                    [--force] [--quiet] [--count N] <input.es>\n"
+      << "  video-trust --version\n"
       << "\n"
       << "Operations: corrupt-vcl | strip-signing-sei | truncate\n"
       << "Annex-B H.264/H.265 Media Signing reference-lab tooling.\n"
       << "Tamper creates controlled test material; it is not a video editor.\n"
       << "Signing/tampering does not establish camera/source authenticity.\n"
       << "\n"
-      << "verify exit codes: 0 valid, 1 integrity fail, 2 usage/input, 3 runtime,\n"
-      << "                  4 unsigned/not verifiable\n"
+      << "verify exit codes: 0 positive, 1 integrity fail, 2 usage/input, 3 runtime,\n"
+      << "                  4 unsigned/incomplete/not verifiable\n"
       << "sign/tamper exit:  0 success, 2 usage/input/path, 3 runtime\n";
 }
 
@@ -387,6 +393,10 @@ int main(int argc, char** argv) {
   const std::string_view cmd(argv[1]);
   if (cmd == "-h" || cmd == "--help") {
     Usage(std::cout);
+    return 0;
+  }
+  if (cmd == "-V" || cmd == "--version") {
+    std::cout << "video-trust " << VIDEO_TRUST_VERSION << "\n";
     return 0;
   }
 

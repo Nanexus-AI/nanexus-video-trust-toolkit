@@ -3,25 +3,29 @@
 All notable changes to this project will be documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
-and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html)
-for future releases. **M0 is not a release.**
+and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased]
 
+Preparing first tagged developer release **`v0.1.0`** (not tagged yet).
+
 ### Added
 
-- C++20 Trust Core foundation: Meson build, ONVIF adapter, verification result model, unit tests
-- Build helpers and docs for pinned media-signing-framework integration (`docs/build.md`)
-- Frozen M1 exit-code and trust-axis contracts (`docs/m1-contracts.md`)
-- Public roadmap (`docs/roadmap.md`) covering M0–M8 milestone progression
-- Initial repository bootstrap for Nanexus Video Trust Toolkit
-- Documentation for architecture, upstream Media Signing pin, and M0 feasibility findings
-- Helper script to fetch the pinned ONVIF `media-signing-framework` revision
+- Annex-B H.264/H.265 `video-trust sign`, `verify`, and `tamper`
+- Structured multi-axis verification results (text + `--json`, `schema_version` 0.1)
+- Deterministic tamper operations: `corrupt-vcl`, `strip-signing-sei`, `truncate`
+- Integration with pinned official ONVIF Media Signing Framework (`r25.12.6`, unthreaded plugin)
+- Meson/Ninja build, install of `video-trust`, and Ubuntu x86_64 GCC CI
+- Exit-code contracts for verify / sign / tamper
+- Developer docs: build, usage, JSON contract, fixtures provenance
 
-### Changed
+### Notes
 
-- Marked project status Experimental / Pre-release with M0 Complete and M1 / v0.1.0 as next
-- Clarified independence from ONVIF (uses Media Signing framework; not an official ONVIF project)
-- Updated public M0 feasibility findings with execution results at pin `r25.12.6`
-- Clarified media-signing-framework project/release version vs Meson build-tool version in upstream docs
-- Documented approved upstream pin `r25.12.6` and first M0 controlled-tamper method
+- Experimental / pre-release; not ONVIF-certified
+- Source authenticity remains `not_established` for M1 reference-lab material
+- Input is Annex-B elementary stream only (no MP4/MKV/RTSP in v0.1.0)
+
+## [0.1.0] — TBD
+
+Release notes will be published with the `v0.1.0` tag. Until then, see
+**Unreleased** above.
