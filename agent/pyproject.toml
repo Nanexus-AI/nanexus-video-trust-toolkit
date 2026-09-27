@@ -1,10 +1,11 @@
 [project]
 name = "nanexus-video-trust-agent"
 version = "0.1.0"
-description = "Experimental read-only contracts and core client for the Nanexus Video Trust reference lab."
+description = "Experimental read-only Video Trust verification capabilities and stdio MCP adapter."
 requires-python = ">=3.12"
 license = "Apache-2.0"
 dependencies = [
+  "mcp>=2.2,<3",
   "pydantic>=2.12,<3",
 ]
 

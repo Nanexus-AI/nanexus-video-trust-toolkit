@@ -39,8 +39,22 @@ The Nanexus layer must use the official Media Signing implementation for:
   sign→verify, controlled tamper classification, API understanding). **Complete.**
 * **M1** — file-based reference lab (`v0.1.0` released): sign / verify / tamper
   with structured results and CI. **Complete.**
-* **M1.5** — experimental read-only Agent capability layer over `video-trust verify`.
-  **In development.** It is not a stable SDK and does not yet expose an MCP server.
+* **M1.5** — experimental read-only Agent capability layer over `video-trust verify`,
+  including an experimental stdio MCP server. **In development.** It is not a stable
+  SDK or an Agent product.
 
 See [`roadmap.md`](roadmap.md). This project is independent open-source work that
 uses the ONVIF Media Signing framework; it is not an official ONVIF project.
+
+## Experimental stdio server
+
+```bash
+NANEXUS_VIDEO_TRUST=/path/to/video-trust \
+NANEXUS_ALLOWED_ROOTS=/path/to/media \
+python -m nanexus_video_trust_agent.mcp_server
+```
+
+`NANEXUS_ALLOWED_ROOTS` is `os.pathsep`-separated. Empty roots refuse startup.
+Optional `NANEXUS_VERIFY_TIMEOUT` is seconds, at most 300. The server exposes only
+`video_trust.verify_file` and `video_trust.assess_video_integrity`. It does not
+sign or modify files, and a verification result does not establish source authenticity.
