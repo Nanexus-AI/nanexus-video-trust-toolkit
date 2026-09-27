@@ -8,6 +8,8 @@ This directory holds instructions and optional local checkouts of upstream proje
 * License: MIT
 * Pin and API notes: [`../docs/upstream-media-signing.md`](../docs/upstream-media-signing.md)
 * Fetch: `../scripts/fetch-upstream.sh`
+* Build/install into a local prefix: `../scripts/build-upstream.sh` (default `.oms-prefix/`)
+* Nanexus Meson option: `-Doms_prefix=...` (see `../docs/build.md`)
 
 By default, the fetched tree under `media-signing-framework/` is **not** committed.
 Prefer pin + local fetch over vendoring. If vendoring is ever required, document

@@ -42,3 +42,6 @@ signed_*.mp4
 *.so.*
 *.dylib
 *.exe
+
+# Local ONVIF framework install prefix (build helper)
+/.oms-prefix/

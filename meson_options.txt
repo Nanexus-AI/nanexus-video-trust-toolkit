@@ -1,0 +1,6 @@
+option(
+  'oms_prefix',
+  type: 'string',
+  value: '',
+  description: 'Install prefix of pinned media-signing-framework (default: <srcdir>/.oms-prefix)',
+)

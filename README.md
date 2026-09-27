@@ -85,15 +85,19 @@ vendored into this repository by default.
 
 ## Build direction
 
-* Language: C++20 (Nanexus layer; begins in M1)
+* Language: C++20 (Trust Core foundation started; CLI not yet implemented)
 * Platform baseline: Linux x86_64 / Ubuntu 24.04
 * Build: Meson + Ninja
-* Signing core: official ONVIF Media Signing (C API)
+* Signing core: official ONVIF Media Signing (C API), unthreaded plugin
+
+See [`docs/build.md`](docs/build.md) for configure/build/test steps.
 
 ## Documentation
 
 * [`docs/roadmap.md`](docs/roadmap.md) — milestone progression
 * [`docs/architecture.md`](docs/architecture.md) — layering intent
+* [`docs/build.md`](docs/build.md) — Meson build and ONVIF pin integration
+* [`docs/m1-contracts.md`](docs/m1-contracts.md) — exit codes and trust-result axes
 * [`docs/m0-feasibility.md`](docs/m0-feasibility.md) — sanitized M0 findings
 * [`docs/upstream-media-signing.md`](docs/upstream-media-signing.md) — upstream pin
 
