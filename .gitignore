@@ -30,6 +30,12 @@
 /evidence/
 /.agents/
 
+# Python package local environment
+__pycache__/
+.pytest_cache/
+*.pyc
+agent/.venv/
+
 # Generated evidence-like outputs
 validation_results.txt
 signed_*.mp4
