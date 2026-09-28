@@ -22,6 +22,12 @@ enum class NalKind {
   ParameterSet,
 };
 
+enum class MediaSigningSeiStatus {
+  NotSigning,
+  Signing,
+  Indeterminate,
+};
+
 /// Codec NAL header length after the start code (H.264: 1, H.265: 2).
 std::size_t NalHeaderLength(Codec codec) noexcept;
 
@@ -36,6 +42,12 @@ bool IsSeiNal(Codec codec, const NalUnit& nal) noexcept;
 /// True iff this is an ONVIF Media Signing SEI (payload type 5 + kUuidMediaSigning).
 /// Unrelated user-data SEIs (e.g. encoder info) return false.
 bool IsOnvifMediaSigningSei(Codec codec, const NalUnit& nal) noexcept;
+
+/// Classify ONVIF Media Signing SEI from complete or bounded-prefix NAL bytes.
+/// When |nal_bytes_complete| is false, Indeterminate reports that the retained
+/// prefix ended before the user-data UUID could be classified reliably.
+MediaSigningSeiStatus ClassifyOnvifMediaSigningSei(
+    Codec codec, const NalUnit& nal, bool nal_bytes_complete) noexcept;
 
 /// Index of payload byte suitable for corrupt-vcl (after SC + NAL header).
 /// Returns false if the NAL is too short to mutate safely.

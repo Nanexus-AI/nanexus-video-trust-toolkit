@@ -91,33 +91,46 @@ bool IsSeiNal(Codec codec, const NalUnit& nal) noexcept {
   return ClassifyNal(codec, nal) == NalKind::Sei;
 }
 
-bool IsOnvifMediaSigningSei(Codec codec, const NalUnit& nal) noexcept {
+MediaSigningSeiStatus ClassifyOnvifMediaSigningSei(
+    Codec codec, const NalUnit& nal, bool nal_bytes_complete) noexcept {
   if (!IsSeiNal(codec, nal)) {
-    return false;
+    return MediaSigningSeiStatus::NotSigning;
   }
   const std::size_t payload_off = SeiPayloadStart(codec, nal);
   if (nal.bytes.size() <= payload_off) {
-    return false;
+    return nal_bytes_complete ? MediaSigningSeiStatus::NotSigning
+                              : MediaSigningSeiStatus::Indeterminate;
   }
   const uint8_t* p = nal.bytes.data() + payload_off;
   std::size_t avail = nal.bytes.size() - payload_off;
   // SEI payload type
   if (*p != 0x05) {  // USER_DATA_UNREGISTERED
-    return false;
+    return MediaSigningSeiStatus::NotSigning;
   }
   ++p;
   --avail;
   std::size_t payload_size = 0;
   std::size_t size_bytes = 0;
   if (!DecodeSeiPayloadSize(p, avail, &payload_size, &size_bytes)) {
-    return false;
+    return nal_bytes_complete ? MediaSigningSeiStatus::NotSigning
+                              : MediaSigningSeiStatus::Indeterminate;
   }
   p += size_bytes;
   avail -= size_bytes;
   if (avail < kOnvifMediaSigningUuidLen || payload_size < kOnvifMediaSigningUuidLen) {
-    return false;
+    if (!nal_bytes_complete && avail < kOnvifMediaSigningUuidLen) {
+      return MediaSigningSeiStatus::Indeterminate;
+    }
+    return MediaSigningSeiStatus::NotSigning;
   }
-  return std::memcmp(p, kOnvifMediaSigningUuid, kOnvifMediaSigningUuidLen) == 0;
+  return std::memcmp(p, kOnvifMediaSigningUuid, kOnvifMediaSigningUuidLen) == 0
+             ? MediaSigningSeiStatus::Signing
+             : MediaSigningSeiStatus::NotSigning;
+}
+
+bool IsOnvifMediaSigningSei(Codec codec, const NalUnit& nal) noexcept {
+  return ClassifyOnvifMediaSigningSei(codec, nal, true) ==
+         MediaSigningSeiStatus::Signing;
 }
 
 bool VclMutationOffset(Codec codec, const NalUnit& nal, std::size_t* offset) noexcept {

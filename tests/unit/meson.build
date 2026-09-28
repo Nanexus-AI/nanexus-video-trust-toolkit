@@ -33,6 +33,13 @@ test_annexb = executable(
 )
 test('annexb_reader', test_annexb)
 
+test_correlation = executable(
+  'test_correlation',
+  'test_correlation.cpp',
+  dependencies: videotrust_dep,
+)
+test('artifact_nal_correlation', test_correlation)
+
 test_render = executable(
   'test_render',
   'test_render.cpp',

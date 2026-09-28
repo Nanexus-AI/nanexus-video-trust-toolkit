@@ -74,6 +74,7 @@ videotrust_core = static_library(
   'videotrust_core',
   files(
     'src/core/annexb.cpp',
+    'src/core/correlation.cpp',
     'src/core/error.cpp',
     'src/core/nal_classify.cpp',
     'src/core/result.cpp',
