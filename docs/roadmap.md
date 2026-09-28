@@ -13,6 +13,7 @@ framework/standard. It is **not** an official ONVIF project.
 | --- | --- | --- |
 | **M0** | Feasibility Spike | **Complete** |
 | **M1** | File-Based Reference Lab | **Complete** — `v0.1.0` released (Pre-release) |
+| **M1.5** | Experimental Agent interface | **Implemented on `main`** — not a stable API or a tagged release |
 | **M2** | Inspect + Report | Planned |
 | **M3** | VMS/NVR Preservation Testing | Planned |
 | **M4** | Passive Live RTSP Verification | Planned |
@@ -34,6 +35,24 @@ See [`m0-feasibility.md`](m0-feasibility.md).
 First usable developer release (`v0.1.0`): file-based reference lab with
 `sign` / `verify` / `tamper`, H.264/H.265 Annex-B, structured results, CLI + JSON,
 deterministic fixtures, and CI. Published as a GitHub Pre-release.
+
+## M1.5 — Experimental Agent interface (on `main`)
+
+Typed read-only capabilities over the same `video-trust verify` core:
+`video_trust.verify_file` (L1) and `video_trust.assess_video_integrity` (L2),
+plus a thin MCP stdio adapter and an evaluation harness. Sign and tamper stay
+on the CLI. This is experimental. It does not replace the domain roadmap and
+it is not a new product version tag.
+
+From M2 onward, each milestone should note, alongside the domain work:
+
+* any new Agent-facing capability and its level (L1, L2, or a future L3)
+* contract, evidence, and safety impact
+* whether stronger and smaller models can use the same explicit contract
+* backward compatibility
+
+That review sits next to the domain milestone. It does not turn the project
+into an Agent platform.
 
 ## Later milestones (summary)
 

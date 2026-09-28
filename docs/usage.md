@@ -72,3 +72,8 @@ Details and caveats: [`m1-contracts.md`](m1-contracts.md).
 
 * **verify:** 0 positive · 1 negative integrity · 2 CLI/input · 3 runtime · 4 unsigned/incomplete/not verifiable
 * **sign / tamper:** 0 success · 2 CLI/input/path · 3 runtime
+
+## Agent access
+
+M1.5 can verify through MCP stdio. That path is read-only: it does not expose
+`sign` or `tamper`. See [`agent-interface.md`](agent-interface.md).

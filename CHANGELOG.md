@@ -7,8 +7,18 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+
+- Experimental Agent interface on `main` (not a release tag): Python capability
+  layer, read-only MCP stdio tools `video_trust.verify_file` and
+  `video_trust.assess_video_integrity`, and an evaluation harness
+- Public docs: `docs/agent-interface.md`, architecture and roadmap notes for M1.5
+- Continuous integration runs the Python Agent test suite without live model credentials
+
 ### Notes
 
+- Product version remains `0.1.0`. Core JSON schema, Agent contract, and
+  capability versions remain `0.1`. Evaluation suite/scorer is `0.2`.
 - Post-`v0.1.0` development continues here after the first developer release.
 
 ## [0.1.0] — 2026-09-27

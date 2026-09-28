@@ -31,6 +31,7 @@ jobs:
             meson \
             ninja-build \
             libssl-dev \
+            openssl \
             ffmpeg \
             git \
             ca-certificates
@@ -56,3 +57,12 @@ jobs:
           test -x destdir/usr/local/bin/video-trust
           destdir/usr/local/bin/video-trust --version
           destdir/usr/local/bin/video-trust --help >/dev/null
+
+      - name: Install uv
+        uses: astral-sh/setup-uv@v5
+        with:
+          python-version: "3.12"
+
+      - name: Agent tests
+        working-directory: agent
+        run: uv run --frozen --python 3.12 pytest -q --tb=short -p no:cacheprovider

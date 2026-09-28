@@ -10,22 +10,33 @@ signer/source identity, certificate/PKI handling, time integrity, VMS/NVR signin
 preservation, evidence verification, provenance/chain of custody, passive live
 verification, and C2PA interoperability.
 
-## Layering intent
+## Layering
 
 ```text
-Experimental read-only capability layer (in development; not a stable interface)
-        │
-        │ video-trust verify --json
-        ▼
-Nanexus Video Trust Toolkit (C++20 CLI)
-        │
-        │ uses (does not reimplement)
-        ▼
-ONVIF media-signing-framework (official C library + plugins)
-        │
-        ▼
-OpenSSL 3.x
+ONVIF Media Signing Framework
+            │
+            ▼
+C++ Video Trust Core / CLI  ──────────►  Human / developer
+            │                              sign, verify, tamper
+            │ video-trust verify --json
+            ▼
+Python CoreClient
+            │
+            ▼
+Agent capability layer
+  L1  video_trust.verify_file
+  L2  video_trust.assess_video_integrity
+            │
+            ▼
+MCP stdio adapter
+            │
+            ▼
+External Agent / runtime
 ```
+
+The C++ core does not depend on MCP or on Python. The capability layer does
+not depend on an Agent runtime. The MCP adapter only registers tools and
+returns envelopes. Direct CLI use does not go through that adapter.
 
 The Nanexus layer must use the official Media Signing implementation for:
 
@@ -40,18 +51,22 @@ The Nanexus layer must use the official Media Signing implementation for:
 * **M1** — file-based reference lab (`v0.1.0` released): sign / verify / tamper
   with structured results and CI. **Complete.**
 * **M1.5** — experimental read-only Agent capability layer over `video-trust verify`,
-  including an experimental stdio MCP server. **In development.** It is not a stable
-  SDK or an Agent product.
+  with L1 `video_trust.verify_file`, L2 `video_trust.assess_video_integrity`, and
+  a stdio MCP adapter. **Implemented on `main`.** It is not a stable SDK, not a
+  tagged release, and not an Agent product. See [`agent-interface.md`](agent-interface.md).
 
 See [`roadmap.md`](roadmap.md). This project is independent open-source work that
 uses the ONVIF Media Signing framework; it is not an official ONVIF project.
 
 ## Experimental stdio server
 
+Configuration and tool contracts: [`agent-interface.md`](agent-interface.md).
+
 ```bash
+cd agent
 NANEXUS_VIDEO_TRUST=/path/to/video-trust \
 NANEXUS_ALLOWED_ROOTS=/path/to/media \
-python -m nanexus_video_trust_agent.mcp_server
+uv run --python 3.12 python -m nanexus_video_trust_agent.mcp_server
 ```
 
 `NANEXUS_ALLOWED_ROOTS` is `os.pathsep`-separated. Empty roots refuse startup.
