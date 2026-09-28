@@ -1,6 +1,24 @@
 #include "videotrust/upstream_mapping.hpp"
 
 namespace videotrust {
+namespace {
+
+std::optional<std::string> OptionalCString(const char* s) {
+  if (s == nullptr || s[0] == '\0') {
+    return std::nullopt;
+  }
+  return std::string(s);
+}
+
+/// Upstream uses negative sentinels for unavailable hashable counts.
+std::optional<int> OptionalHashableCount(int v) {
+  if (v < 0) {
+    return std::nullopt;
+  }
+  return v;
+}
+
+}  // namespace
 
 SignatureIntegrity MapAuthenticity(MediaSigningAuthenticityResult v) noexcept {
   switch (v) {
@@ -115,6 +133,40 @@ VerificationResult MapFromUpstream(Codec codec,
         {"SIGNING_KEY_PROVENANCE_OK",
          "Signing public key validated against trust anchor; source authenticity not established"});
   }
+
+  return out;
+}
+
+InspectionResult MapInspectionFromUpstream(
+    Codec codec,
+    const onvif_media_signing_authenticity_t& report,
+    bool trust_anchor_provided) {
+  InspectionResult out;
+  out.verification = MapFromUpstream(codec, report, trust_anchor_provided);
+
+  const auto& acc = report.accumulated_validation;
+  out.accumulated.received_nalus = acc.number_of_received_nalus;
+  out.accumulated.validated_nalus = acc.number_of_validated_nalus;
+  out.accumulated.pending_nalus = acc.number_of_pending_nalus;
+  out.accumulated.received_frames = acc.number_of_received_frames;
+  out.accumulated.validated_frames = acc.number_of_validated_frames;
+  out.accumulated.pending_frames = acc.number_of_pending_frames;
+  out.accumulated.first_timestamp = acc.first_timestamp;
+  out.accumulated.last_timestamp = acc.last_timestamp;
+
+  const auto& latest = report.latest_validation;
+  out.latest.expected_hashable_nalus =
+      OptionalHashableCount(latest.number_of_expected_hashable_nalus);
+  out.latest.received_hashable_nalus =
+      OptionalHashableCount(latest.number_of_received_hashable_nalus);
+  out.latest.pending_hashable_nalus =
+      OptionalHashableCount(latest.number_of_pending_hashable_nalus);
+  out.latest.start_timestamp = latest.start_timestamp;
+  out.latest.end_timestamp = latest.end_timestamp;
+
+  out.vendor.manufacturer = OptionalCString(report.vendor_info.manufacturer);
+  out.vendor.firmware_version = OptionalCString(report.vendor_info.firmware_version);
+  out.vendor.serial_number = OptionalCString(report.vendor_info.serial_number);
 
   return out;
 }

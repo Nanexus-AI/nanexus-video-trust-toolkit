@@ -12,6 +12,13 @@ test_mapping = executable(
 )
 test('upstream_mapping', test_mapping)
 
+test_inspection_mapping = executable(
+  'test_inspection_mapping',
+  'test_inspection_mapping.cpp',
+  dependencies: videotrust_dep,
+)
+test('inspection_mapping', test_inspection_mapping)
+
 test_result = executable(
   'test_result',
   'test_result.cpp',
