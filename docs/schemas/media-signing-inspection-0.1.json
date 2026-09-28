@@ -1,0 +1,164 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "urn:nanexus:schema:media-signing-inspection:0.1",
+  "title": "Nanexus Media Signing Inspection 0.1",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "document_type",
+    "schema_version",
+    "verification",
+    "accumulated_validation",
+    "latest_validation",
+    "vendor"
+  ],
+  "properties": {
+    "document_type": { "const": "media_signing_inspection" },
+    "schema_version": { "const": "0.1" },
+    "verification": { "$ref": "#/$defs/verification" },
+    "accumulated_validation": { "$ref": "#/$defs/accumulated_validation" },
+    "latest_validation": { "$ref": "#/$defs/latest_validation" },
+    "vendor": { "$ref": "#/$defs/vendor_observations" }
+  },
+  "$defs": {
+    "nullable_nonnegative_integer": {
+      "type": ["integer", "null"],
+      "minimum": 0,
+      "maximum": 2147483647
+    },
+    "int64": {
+      "type": "integer",
+      "minimum": -9223372036854775808,
+      "maximum": 9223372036854775807
+    },
+    "uint32": {
+      "type": "integer",
+      "minimum": 0,
+      "maximum": 4294967295
+    },
+    "verification": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "schema_version",
+        "codec",
+        "media_signing",
+        "signature_integrity",
+        "continuity",
+        "verification_completeness",
+        "certificate_status",
+        "source_authenticity",
+        "public_key_has_changed",
+        "overall",
+        "vendor",
+        "versions",
+        "findings"
+      ],
+      "properties": {
+        "schema_version": { "const": "0.1" },
+        "codec": { "enum": ["h264", "h265"] },
+        "media_signing": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["present"],
+          "properties": { "present": { "type": "boolean" } }
+        },
+        "signature_integrity": {
+          "enum": ["not_applicable", "not_feasible", "ok", "ok_with_missing_info", "not_ok", "version_mismatch"]
+        },
+        "continuity": { "enum": ["not_applicable", "intact", "missing_info", "broken"] },
+        "verification_completeness": { "enum": ["complete", "incomplete", "not_feasible"] },
+        "certificate_status": {
+          "enum": ["not_provided", "not_feasible", "not_ok", "ok", "feasible_without_trusted"]
+        },
+        "source_authenticity": { "const": "not_established" },
+        "public_key_has_changed": { "type": "boolean" },
+        "overall": { "enum": ["VALID", "INVALID", "UNSIGNED", "NOT_VERIFIABLE", "PARTIAL"] },
+        "vendor": {
+          "oneOf": [
+            { "type": "null" },
+            {
+              "type": "object",
+              "additionalProperties": false,
+              "required": ["manufacturer"],
+              "properties": { "manufacturer": { "type": "string" } }
+            }
+          ]
+        },
+        "versions": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["signing", "validation"],
+          "properties": {
+            "signing": { "type": ["string", "null"] },
+            "validation": { "type": ["string", "null"] }
+          }
+        },
+        "findings": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": ["code", "message"],
+            "properties": {
+              "code": { "type": "string" },
+              "message": { "type": "string" }
+            }
+          }
+        }
+      }
+    },
+    "accumulated_validation": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "number_of_received_nalus",
+        "number_of_validated_nalus",
+        "number_of_pending_nalus",
+        "number_of_received_frames",
+        "number_of_validated_frames",
+        "number_of_pending_frames",
+        "first_timestamp",
+        "last_timestamp"
+      ],
+      "properties": {
+        "number_of_received_nalus": { "$ref": "#/$defs/uint32" },
+        "number_of_validated_nalus": { "$ref": "#/$defs/uint32" },
+        "number_of_pending_nalus": { "$ref": "#/$defs/uint32" },
+        "number_of_received_frames": { "$ref": "#/$defs/uint32" },
+        "number_of_validated_frames": { "$ref": "#/$defs/uint32" },
+        "number_of_pending_frames": { "$ref": "#/$defs/uint32" },
+        "first_timestamp": { "$ref": "#/$defs/int64" },
+        "last_timestamp": { "$ref": "#/$defs/int64" }
+      }
+    },
+    "latest_validation": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "number_of_expected_hashable_nalus",
+        "number_of_received_hashable_nalus",
+        "number_of_pending_hashable_nalus",
+        "start_timestamp",
+        "end_timestamp"
+      ],
+      "properties": {
+        "number_of_expected_hashable_nalus": { "$ref": "#/$defs/nullable_nonnegative_integer" },
+        "number_of_received_hashable_nalus": { "$ref": "#/$defs/nullable_nonnegative_integer" },
+        "number_of_pending_hashable_nalus": { "$ref": "#/$defs/nullable_nonnegative_integer" },
+        "start_timestamp": { "$ref": "#/$defs/int64" },
+        "end_timestamp": { "$ref": "#/$defs/int64" }
+      }
+    },
+    "vendor_observations": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["manufacturer", "firmware_version", "serial_number"],
+      "properties": {
+        "manufacturer": { "type": ["string", "null"] },
+        "firmware_version": { "type": ["string", "null"] },
+        "serial_number": { "type": ["string", "null"] }
+      }
+    }
+  }
+}

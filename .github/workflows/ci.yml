@@ -34,6 +34,7 @@ jobs:
             openssl \
             ffmpeg \
             git \
+            python3-jsonschema \
             ca-certificates
 
       - name: Fetch pinned ONVIF Media Signing Framework

@@ -10,6 +10,65 @@
 #include <sstream>
 
 namespace videotrust {
+namespace {
+
+template <typename Result, typename Mapper>
+Expected<Result> MapNalUnitsFromOneReport(MediaSigningSession& session,
+                                          const std::vector<NalUnit>& nalus,
+                                          Mapper mapper) {
+  if (nalus.empty()) {
+    return MakeError(ErrorCode::ParseError, "no NAL units to verify");
+  }
+
+  for (const auto& nal : nalus) {
+    onvif_media_signing_authenticity_t* report = nullptr;
+    const MediaSigningReturnCode rc = onvif_media_signing_add_nalu_and_authenticate(
+        session.get(), nal.bytes.data(), nal.bytes.size(), &report);
+    if (report != nullptr) {
+      onvif_media_signing_authenticity_report_free(report);
+    }
+    if (rc != OMS_OK) {
+      return MakeError(ErrorCode::UpstreamFailure,
+                       "onvif_media_signing_add_nalu_and_authenticate failed: " +
+                           std::to_string(static_cast<int>(rc)));
+    }
+  }
+
+  onvif_media_signing_authenticity_t* final_report =
+      onvif_media_signing_get_authenticity_report(session.get());
+  if (final_report == nullptr) {
+    return MakeError(ErrorCode::UpstreamFailure,
+                     "onvif_media_signing_get_authenticity_report returned null");
+  }
+  Result mapped = mapper(*final_report);
+  onvif_media_signing_authenticity_report_free(final_report);
+  return mapped;
+}
+
+template <typename Result, typename Processor>
+Expected<Result> ProcessAnnexBFile(const VerifyOptions& options, Processor processor) {
+  auto session = MediaSigningSession::Create(options.codec);
+  if (!session.ok()) {
+    return session.error();
+  }
+
+  const bool has_ca = !options.ca_pem_path.empty();
+  if (has_ca) {
+    const Error ca_err =
+        SetTrustedCertificateFromFile(session.value(), options.ca_pem_path);
+    if (ca_err.code != ErrorCode::Ok) {
+      return ca_err;
+    }
+  }
+
+  auto nalus = AnnexBReader::ParseFile(options.input_path);
+  if (!nalus.ok()) {
+    return nalus.error();
+  }
+  return processor(session.value(), nalus.value(), has_ca);
+}
+
+}  // namespace
 
 Error SetTrustedCertificateFromFile(MediaSigningSession& session,
                                     const std::string& ca_pem_path) {
@@ -35,57 +94,33 @@ Expected<VerificationResult> VerifyNalUnits(MediaSigningSession& session,
                                             Codec codec,
                                             const std::vector<NalUnit>& nalus,
                                             bool trust_anchor_provided) {
-  if (nalus.empty()) {
-    return MakeError(ErrorCode::ParseError, "no NAL units to verify");
-  }
-
-  for (const auto& nal : nalus) {
-    onvif_media_signing_authenticity_t* report = nullptr;
-    const MediaSigningReturnCode rc = onvif_media_signing_add_nalu_and_authenticate(
-        session.get(), nal.bytes.data(), nal.bytes.size(), &report);
-    if (report != nullptr) {
-      onvif_media_signing_authenticity_report_free(report);
-      report = nullptr;
-    }
-    if (rc != OMS_OK) {
-      return MakeError(ErrorCode::UpstreamFailure,
-                       "onvif_media_signing_add_nalu_and_authenticate failed: " +
-                           std::to_string(static_cast<int>(rc)));
-    }
-  }
-
-  onvif_media_signing_authenticity_t* final_report =
-      onvif_media_signing_get_authenticity_report(session.get());
-  if (final_report == nullptr) {
-    return MakeError(ErrorCode::UpstreamFailure,
-                     "onvif_media_signing_get_authenticity_report returned null");
-  }
-  VerificationResult mapped =
-      MapFromUpstream(codec, *final_report, trust_anchor_provided);
-  onvif_media_signing_authenticity_report_free(final_report);
-  return mapped;
+  return MapNalUnitsFromOneReport<VerificationResult>(
+      session, nalus, [&](const onvif_media_signing_authenticity_t& report) {
+        return MapFromUpstream(codec, report, trust_anchor_provided);
+      });
 }
 
 Expected<VerificationResult> VerifyAnnexBFile(const VerifyOptions& options) {
-  auto session = MediaSigningSession::Create(options.codec);
-  if (!session.ok()) {
-    return session.error();
-  }
+  return ProcessAnnexBFile<VerificationResult>(
+      options,
+      [&](MediaSigningSession& session,
+          const std::vector<NalUnit>& nalus,
+          bool has_ca) {
+        return VerifyNalUnits(session, options.codec, nalus, has_ca);
+      });
+}
 
-  const bool has_ca = !options.ca_pem_path.empty();
-  if (has_ca) {
-    const Error ca_err =
-        SetTrustedCertificateFromFile(session.value(), options.ca_pem_path);
-    if (ca_err.code != ErrorCode::Ok) {
-      return ca_err;
-    }
-  }
-
-  auto nalus = AnnexBReader::ParseFile(options.input_path);
-  if (!nalus.ok()) {
-    return nalus.error();
-  }
-  return VerifyNalUnits(session.value(), options.codec, nalus.value(), has_ca);
+Expected<InspectionResult> InspectAnnexBFile(const VerifyOptions& options) {
+  return ProcessAnnexBFile<InspectionResult>(
+      options,
+      [&](MediaSigningSession& session,
+          const std::vector<NalUnit>& nalus,
+          bool has_ca) {
+        return MapNalUnitsFromOneReport<InspectionResult>(
+            session, nalus, [&](const onvif_media_signing_authenticity_t& report) {
+              return MapInspectionFromUpstream(options.codec, report, has_ca);
+            });
+      });
 }
 
 }  // namespace videotrust

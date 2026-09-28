@@ -2,6 +2,7 @@
 
 #include "videotrust/annexb.hpp"
 #include "videotrust/error.hpp"
+#include "videotrust/inspection.hpp"
 #include "videotrust/result.hpp"
 #include "videotrust/session.hpp"
 
@@ -19,6 +20,11 @@ struct VerifyOptions {
 
 /// Verify an Annex-B file using the official ONVIF validator C API.
 Expected<VerificationResult> VerifyAnnexBFile(const VerifyOptions& options);
+
+/// Inspect an Annex-B file using one official ONVIF validation session/report.
+/// The returned InspectionResult embeds the M1 verification mapping from that
+/// same report and adds the typed M2 observations.
+Expected<InspectionResult> InspectAnnexBFile(const VerifyOptions& options);
 
 /// Configure trust anchor PEM on an existing session (before first NAL).
 Error SetTrustedCertificateFromFile(MediaSigningSession& session,

@@ -25,6 +25,10 @@ test_tamper_cli = executable(
   install: false,
 )
 
+python = import('python').find_installation('python3')
+inspect_test_script = meson.project_source_root() / 'tests/integration/test_inspect_cli.py'
+inspection_schema = meson.project_source_root() / 'docs/schemas/media-signing-inspection-0.1.json'
+
 verify_runner = find_program('bash')
 
 test(
@@ -40,6 +44,25 @@ test(
     + '"' + fixture_dir + '"',
   ],
   depends: [video_trust, oms_sign_annexb, test_verify_cli],
+  timeout: 180,
+  is_parallel: false,
+)
+
+test(
+  'inspect_integration',
+  verify_runner,
+  args: [
+    '-lc',
+    'set -euo pipefail; '
+    + 'OMS_SIGN_ANNEXB="' + oms_sign_annexb.full_path() + '" '
+    + '"' + gen_script + '" "' + fixture_dir + '"; '
+    + '"' + python.full_path() + '" '
+    + '"' + inspect_test_script + '" '
+    + '"' + video_trust.full_path() + '" '
+    + '"' + fixture_dir + '" '
+    + '"' + inspection_schema + '"',
+  ],
+  depends: [video_trust, oms_sign_annexb],
   timeout: 180,
   is_parallel: false,
 )

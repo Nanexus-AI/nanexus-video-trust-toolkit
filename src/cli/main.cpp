@@ -21,6 +21,7 @@ void Usage(std::ostream& out) {
   out << "video-trust " << VIDEO_TRUST_VERSION << "\n"
       << "Usage:\n"
       << "  video-trust verify --codec h264|h265 [--ca PATH] [--json] <input.es>\n"
+      << "  video-trust inspect --codec h264|h265 [--ca PATH] [--json] <input.es>\n"
       << "  video-trust sign --codec h264|h265 --key KEY.pem --cert CHAIN.pem\n"
       << "                   -o OUTPUT.es [--force] [--quiet] <input.es>\n"
       << "  video-trust tamper --codec h264|h265 --operation OP -o OUTPUT.es\n"
@@ -142,6 +143,10 @@ bool ParseVerifyArgs(int argc, char** argv, VerifyArgs& out, std::string& err) {
   }
   out.input = positionals[0];
   return true;
+}
+
+bool ParseInspectArgs(int argc, char** argv, VerifyArgs& out, std::string& err) {
+  return ParseVerifyArgs(argc, argv, out, err);
 }
 
 bool ParseSignArgs(int argc, char** argv, SignArgs& out, std::string& err) {
@@ -330,6 +335,34 @@ int RunVerify(const VerifyArgs& args) {
   return static_cast<int>(videotrust::ExitCodeForVerification(result.value()));
 }
 
+int RunInspect(const VerifyArgs& args) {
+  videotrust::VerifyOptions opt;
+  opt.codec = args.codec.codec;
+  opt.input_path = args.input;
+  opt.ca_pem_path = args.ca;
+
+  auto result = videotrust::InspectAnnexBFile(opt);
+  if (!result.ok()) {
+    const auto& e = result.error();
+    std::cerr << "error: " << e.message << "\n";
+    using videotrust::ErrorCode;
+    if (e.code == ErrorCode::ParseError || e.code == ErrorCode::InvalidArgument ||
+        (e.code == ErrorCode::IoFailure &&
+         e.message.find("cannot open") != std::string::npos)) {
+      return static_cast<int>(videotrust::ExitCode::UsageOrInputError);
+    }
+    return static_cast<int>(videotrust::ExitCode::RuntimeFailure);
+  }
+
+  if (args.json) {
+    std::cout << videotrust::RenderInspectionJson(result.value());
+  } else {
+    std::cout << videotrust::RenderInspectionText(result.value());
+  }
+  return static_cast<int>(
+      videotrust::ExitCodeForVerification(result.value().verification));
+}
+
 int RunSign(const SignArgs& args) {
   videotrust::SignOptions opt;
   opt.codec = args.codec.codec;
@@ -410,6 +443,15 @@ int main(int argc, char** argv) {
     }
     return RunVerify(args);
   }
+  if (cmd == "inspect") {
+    VerifyArgs args;
+    if (!ParseInspectArgs(argc, argv, args, err)) {
+      std::cerr << "error: " << err << "\n";
+      Usage(std::cerr);
+      return static_cast<int>(videotrust::ExitCode::UsageOrInputError);
+    }
+    return RunInspect(args);
+  }
   if (cmd == "sign") {
     SignArgs args;
     if (!ParseSignArgs(argc, argv, args, err)) {
@@ -429,7 +471,7 @@ int main(int argc, char** argv) {
     return RunTamper(args);
   }
 
-  std::cerr << "error: unknown subcommand (use verify, sign, or tamper)\n";
+  std::cerr << "error: unknown subcommand (use verify, inspect, sign, or tamper)\n";
   Usage(std::cerr);
   return static_cast<int>(videotrust::ExitCode::UsageOrInputError);
 }

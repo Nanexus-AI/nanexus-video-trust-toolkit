@@ -40,6 +40,17 @@ test_render = executable(
 )
 test('render_text_json', test_render)
 
+python = import('python').find_installation('python3')
+test(
+  'inspection_json_schema',
+  python,
+  args: [
+    meson.project_source_root() / 'tests/contract/test_inspection_schema.py',
+    meson.project_source_root() / 'docs/schemas/media-signing-inspection-0.1.json',
+    test_render.full_path(),
+  ],
+)
+
 test_sign = executable(
   'test_sign',
   'test_sign.cpp',
