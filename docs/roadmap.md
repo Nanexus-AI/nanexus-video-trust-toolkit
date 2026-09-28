@@ -4,7 +4,10 @@ High-level milestone picture for Nanexus Video Trust Toolkit.
 
 **Project status:** Experimental / Pre-release.  
 **Stable end-user release:** none yet.  
-**First intended usable developer release:** **M1 / `v0.1.0`**.
+**Current published developer release:** **M1 / `v0.1.0`** (Pre-release).
+
+M1.5 and M2 are implemented in current `main` development history. They are
+not part of the `v0.1.0` tag and do not imply that a later release exists.
 
 This is an independent open-source project using the ONVIF Media Signing
 framework/standard. It is **not** an official ONVIF project.
@@ -14,7 +17,7 @@ framework/standard. It is **not** an official ONVIF project.
 | **M0** | Feasibility Spike | **Complete** |
 | **M1** | File-Based Reference Lab | **Complete** — `v0.1.0` released (Pre-release) |
 | **M1.5** | Experimental Agent interface | **Implemented on `main`** — not a stable API or a tagged release |
-| **M2** | Inspect + Report | Planned |
+| **M2** | Inspect + Report | **Implemented on current `main`** — unreleased; not a tagged release |
 | **M3** | VMS/NVR Preservation Testing | Planned |
 | **M4** | Passive Live RTSP Verification | Planned |
 | **M5** | ARM64 / Edge Deployment | Planned |
@@ -54,9 +57,27 @@ From M2 onward, each milestone should note, alongside the domain work:
 That review sits next to the domain milestone. It does not turn the project
 into an Agent platform.
 
+## M2 — Inspect + Report (implemented on current `main`)
+
+Adds `video-trust inspect` over the existing file-based ONVIF validation
+pipeline for Annex-B H.264/H.265. Human-readable output is the default;
+`--json` emits a distinct `media_signing_inspection` document with inspection
+schema version `0.1`. The formal schema is
+[`schemas/media-signing-inspection-0.1.json`](schemas/media-signing-inspection-0.1.json),
+with contract details in [`inspection-v0.1.md`](inspection-v0.1.md).
+
+Inspection adds typed validation counts, raw FILETIME-style timestamp values,
+and optional vendor observations around the unchanged M1 verification context.
+It does not produce a stronger trust verdict: vendor observations do not prove
+device identity, and certificate trust does not establish source authenticity.
+The M1 verify JSON contract remains at version `0.1`.
+
+The experimental Agent interface remains unchanged at two verification tools;
+M2 inspection is available through the CLI/domain surface, not a separate MCP
+tool. Publication review and any future tag or release remain separate steps.
+
 ## Later milestones (summary)
 
-* **M2** — richer inspect/report surfaces for signed media
 * **M3** — preservation behavior through VMS/NVR paths
 * **M4** — passive live RTSP verification
 * **M5** — ARM64 / edge deployment (e.g. RK3588 / Jetson class targets)

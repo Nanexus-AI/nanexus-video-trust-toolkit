@@ -1,23 +1,28 @@
-# Building Nanexus Video Trust Toolkit (M1 / 0.1.0)
+# Building Nanexus Video Trust Toolkit
 
-Experimental / pre-release developer reference lab. Annex-B `verify` / `sign` /
-`tamper` for H.264 and H.265.
+Experimental / pre-release developer reference lab. The `v0.1.0` release
+contains Annex-B `verify` / `sign` / `tamper` for H.264 and H.265; current
+`main` also contains `inspect` and is not a new tagged release.
 
 ## Supported platform
 
 * Linux x86_64
 * Ubuntu 24.04 baseline
-* **GCC** C++20 required for M1 (Clang is not part of required CI)
+* **GCC** C++20 is the current supported compiler baseline (Clang is not part
+  of required CI)
 
 ## Packages (Ubuntu)
 
 ```bash
 sudo apt-get install -y build-essential pkg-config meson ninja-build \
-  libssl-dev ffmpeg git ca-certificates
+  libssl-dev ffmpeg git ca-certificates python3-jsonschema
 ```
 
 * **ffmpeg** is used by test fixture generation (not required to run a
   pre-built `video-trust` binary against your own Annex-B files).
+* **python3-jsonschema** is used by the inspection JSON Schema contract tests.
+  It is a test/development dependency and is not required to run a pre-built
+  `video-trust` binary against media.
 * **OpenSSL 3.x** via `libssl-dev` / `pkg-config openssl`.
 
 ## ONVIF dependency
@@ -68,4 +73,5 @@ uses a separate `schema_version` of `"0.1"` — that is not the product SemVer.
 * [`usage.md`](usage.md) — command examples
 * [`m1-contracts.md`](m1-contracts.md) — exit codes and trust semantics
 * [`json-v0.1.md`](json-v0.1.md) — JSON contract
+* [`inspection-v0.1.md`](inspection-v0.1.md) — inspection text/JSON contract
 * [`fixtures.md`](fixtures.md) — test media provenance

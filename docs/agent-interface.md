@@ -32,6 +32,10 @@ supported by these docs.
 L1 and L2 share one core execution. Either may be the right call. L2 does
 not replace L1.
 
+Current M2 inspection is not a third Agent capability. The richer
+`video-trust inspect` text/JSON surface remains available through the CLI and
+domain layer; MCP continues to expose exactly the two verification tools above.
+
 ## What you need
 
 * The `video-trust` binary from [`build.md`](build.md)
@@ -169,7 +173,7 @@ part of the public envelope.
 | Label | Value | What it names |
 | --- | --- | --- |
 | Product | `v0.1.0` | File-based lab pre-release. Not an M1.5 tag. |
-| Core JSON schema | `0.1` | `video-trust --json` |
+| Core JSON schema | `0.1` | `video-trust verify --json` |
 | Agent contract | `0.1` | Capability envelope |
 | Capability | `0.1` | L1 and L2 |
 | Evaluation suite / scorer | `0.2` | Test harness only |
@@ -193,5 +197,6 @@ credentials, a local model server, or a GPU.
 * Experimental. Field names and codes can still change before a stable API.
 * Annex-B H.264 and H.265 only.
 * Two read-only tools. No goal-level tool.
+* No separate MCP exposure for the M2 inspection surface.
 * `source_authenticity` remains `not_established`.
 * The CLI `sign` and `tamper` commands are not Agent tools.

@@ -16,11 +16,15 @@ verification, and C2PA interoperability.
 ONVIF Media Signing Framework
             │
             ▼
-C++ Video Trust Core / CLI  ──────────►  Human / developer
-            │                              sign, verify, tamper
-            │ video-trust verify --json
-            ▼
-Python CoreClient
+Verification / domain mapping
+            │
+            ├────────► VerificationResult ──► verify text / JSON 0.1
+            │
+            └────────► InspectionResult ────► inspect text / JSON 0.1
+                                             (CLI/domain only)
+
+Agent path (verification contract only):
+VerificationResult ──► Python CoreClient
             │
             ▼
 Agent capability layer
@@ -34,7 +38,10 @@ MCP stdio adapter
 External Agent / runtime
 ```
 
-The C++ core does not depend on MCP or on Python. The capability layer does
+The C++ core does not depend on MCP or on Python. `VerificationResult` provides
+the compact M1 axes and verdict used by `verify`; `InspectionResult` adds typed
+observations for `inspect` without changing those axes. Both are derived from
+the same official ONVIF validation pipeline. The capability layer does
 not depend on an Agent runtime. The MCP adapter only registers tools and
 returns envelopes. Direct CLI use does not go through that adapter.
 
@@ -54,6 +61,11 @@ The Nanexus layer must use the official Media Signing implementation for:
   with L1 `video_trust.verify_file`, L2 `video_trust.assess_video_integrity`, and
   a stdio MCP adapter. **Implemented on `main`.** It is not a stable SDK, not a
   tagged release, and not an Agent product. See [`agent-interface.md`](agent-interface.md).
+* **M2** — file-based inspect/report surface with human-readable output and a
+  separate inspection JSON 0.1 contract. **Implemented on current `main`, not
+  in the `v0.1.0` release.** It adds richer observations, not a stronger trust
+  verdict, and is not exposed as a separate Agent/MCP capability. See
+  [`inspection-v0.1.md`](inspection-v0.1.md).
 
 See [`roadmap.md`](roadmap.md). This project is independent open-source work that
 uses the ONVIF Media Signing framework; it is not an official ONVIF project.

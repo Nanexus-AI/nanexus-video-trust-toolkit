@@ -1,4 +1,4 @@
-# Usage (M1 reference lab)
+# File-based CLI usage
 
 Experimental / pre-release. Annex-B elementary streams only (not MP4/MKV/RTSP).
 
@@ -33,6 +33,23 @@ video-trust verify --codec h265 --ca ca.pem --json signed.h265
   certificate status stays `not_provided`.
 * `--json` writes machine-readable JSON to stdout only (see
   [`json-v0.1.md`](json-v0.1.md)).
+
+### Inspect
+
+```bash
+video-trust inspect --codec h264 --ca ca.pem signed.h264
+video-trust inspect --codec h265 --ca ca.pem --json signed.h265
+```
+
+Inspection uses the same verification pipeline but reports richer observations.
+Human-readable text is the default. `--json` writes the distinct inspection
+document to stdout only; see [`inspection-v0.1.md`](inspection-v0.1.md) and its
+formal [JSON Schema](schemas/media-signing-inspection-0.1.json).
+
+Use `verify` for the compact verdict/axes contract and `inspect` when validation
+counts, raw timestamp values, or vendor observations are needed. Inspection
+does not make a stronger authenticity claim. Its completed-operation exit code
+matches `verify` for the same input; CLI/input and runtime failures use 2 and 3.
 
 ### Tamper (test material only)
 
@@ -70,10 +87,10 @@ Details and caveats: [`m1-contracts.md`](m1-contracts.md).
 
 ## Exit codes (summary)
 
-* **verify:** 0 positive · 1 negative integrity · 2 CLI/input · 3 runtime · 4 unsigned/incomplete/not verifiable
+* **verify / inspect:** 0 positive · 1 negative integrity · 2 CLI/input · 3 runtime · 4 unsigned/incomplete/not verifiable
 * **sign / tamper:** 0 success · 2 CLI/input/path · 3 runtime
 
 ## Agent access
 
 M1.5 can verify through MCP stdio. That path is read-only: it does not expose
-`sign` or `tamper`. See [`agent-interface.md`](agent-interface.md).
+`sign`, `tamper`, or M2 `inspect`. See [`agent-interface.md`](agent-interface.md).

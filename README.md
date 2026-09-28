@@ -3,9 +3,14 @@
 Vendor-neutral **Video Trust** toolkit for file-based Media Signing workflows,
 built on the official ONVIF Media Signing Framework.
 
-The same verification core is available two ways:
+The same verification core supports two file-based views:
 
-* **Human / developer interface** — the `video-trust` CLI and its structured JSON.
+* **Verify** — a compact verdict and trust-axis view, in text or stable M1 JSON 0.1.
+* **Inspect** — a richer observation report, in human-readable text or its
+  separate inspection JSON 0.1 contract.
+
+Verification is also available through an experimental Agent interface:
+
 * **Agent interface** — a typed, read-only capability layer, exposed over MCP stdio.
 
 MCP is the interoperability socket. The product value is the domain result:
@@ -22,17 +27,20 @@ Project Status:              Experimental / Pre-release
 M0 Feasibility:              Complete
 M1 File-based reference lab: Complete — v0.1.0 first developer release
 M1.5 Agent interface:        Experimental, on main (not a stable API)
-M2 and later:                Not started
+M2 Inspect + Report:         Implemented on current main (not a tagged release)
+M3 and later:                Planned
 Stable production release:   None
 ```
 
 `v0.1.0` is the first usable **developer** release of the file-based lab
 (GitHub Pre-release). Product version metadata is `0.1.0`. M1.5 adds an
-experimental Agent interface on `main`. It is not a new tagged release and
-not a stable public API.
+experimental Agent interface, and current `main` adds M2 file-based inspection.
+These post-release changes are not part of `v0.1.0`, do not create a new tagged
+release, and do not make the Agent interface a stable public API.
 
-Version labels are separate: product `v0.1.0`, core JSON schema `0.1`, Agent
-contract `0.1`, capability `0.1`, evaluation suite/scorer `0.2`.
+Version labels are separate: product `v0.1.0`, verify JSON schema `0.1`,
+inspection JSON schema `0.1`, Agent contract `0.1`, capability `0.1`, and
+evaluation suite/scorer `0.2`.
 
 ## What it is
 
@@ -45,12 +53,23 @@ Developer commands:
 
 * `video-trust sign`
 * `video-trust verify` (text + `--json`)
+* `video-trust inspect` (human-readable report + `--json`)
 * `video-trust tamper` (deterministic test mutations)
+
+`verify` is the compact automation-facing verdict and axes contract. `inspect`
+adds validation counts, raw timestamp observations, and optional vendor
+observations around the same verification result. It provides more detail, not
+a stronger authenticity claim. See
+[`docs/inspection-v0.1.md`](docs/inspection-v0.1.md) and the formal
+[`inspection JSON Schema`](docs/schemas/media-signing-inspection-0.1.json).
 
 Agent tools, read-only:
 
 * `video_trust.verify_file` — the verification record (L1)
 * `video_trust.assess_video_integrity` — a deterministic reading of that same record (L2)
+
+The Agent interface does not currently expose the richer inspection surface as
+an MCP tool.
 
 L2 is another abstraction over one core execution. It is not a better answer
 than L1. An Agent uses the level that matches the task. A goal-level
@@ -91,7 +110,8 @@ identifies bytes this layer read. It is not the ONVIF media signature.
 * A replacement for the ONVIF Media Signing Framework
 * An ONVIF-certified or conformant product
 * A system that decides whether a depicted event is real
-* MP4/MKV, RTSP, live, ARM64, or production PKI tooling (later milestones)
+* MP4/MKV, RTSP, live, ARM64, or production PKI tooling (not currently
+  supported; see the roadmap for planned areas)
 
 Sign, tamper, and other write operations stay on the CLI. The MCP server
 does not expose them.
@@ -100,7 +120,7 @@ does not expose them.
 
 ```bash
 sudo apt-get install -y build-essential pkg-config meson ninja-build \
-  libssl-dev ffmpeg git ca-certificates
+  libssl-dev ffmpeg git ca-certificates python3-jsonschema
 
 git clone https://github.com/Nanexus-AI/nanexus-video-trust-toolkit.git
 cd nanexus-video-trust-toolkit
@@ -119,12 +139,15 @@ Example lab workflow (synthetic keys and media you provide):
 video-trust sign --codec h264 --key signer.key.pem --cert signer-chain.pem \
   -o signed.h264 unsigned.h264
 video-trust verify --codec h264 --ca ca.pem signed.h264
+video-trust inspect --codec h264 --ca ca.pem signed.h264
+video-trust inspect --codec h264 --ca ca.pem --json signed.h264
 video-trust tamper --codec h264 --operation corrupt-vcl -o bad.h264 signed.h264
 video-trust verify --codec h264 --ca ca.pem bad.h264
 ```
 
 More detail: [`docs/build.md`](docs/build.md), [`docs/usage.md`](docs/usage.md),
-[`docs/m1-contracts.md`](docs/m1-contracts.md), [`docs/json-v0.1.md`](docs/json-v0.1.md).
+[`docs/m1-contracts.md`](docs/m1-contracts.md), [`docs/json-v0.1.md`](docs/json-v0.1.md),
+and [`docs/inspection-v0.1.md`](docs/inspection-v0.1.md).
 
 ## Agent quick start
 
@@ -152,11 +175,15 @@ Full contract, safety rules, and examples: [`docs/agent-interface.md`](docs/agen
 ONVIF Media Signing Framework
             │
             ▼
-C++ Video Trust Core / CLI  ──────────►  Human / developer
-            │                              sign, verify, tamper
-            │ video-trust verify --json
-            ▼
-Python CoreClient
+Verification + inspection domain mapping
+            │
+            ├────────► VerificationResult ─────► verify text / JSON 0.1
+            │
+            └────────► InspectionResult ───────► inspect text / JSON 0.1
+                                               (CLI/domain only)
+
+Agent path (verification contract only):
+VerificationResult ──► Python CoreClient
             │
             ▼
 Agent capability layer
@@ -184,11 +211,11 @@ repository. See [`docs/architecture.md`](docs/architecture.md).
 
 ## Roadmap
 
-`v0.1.0` is the file-based reference lab. M1.5 is the experimental Agent
-interface on `main`. Later milestones continue the Video Trust roadmap
-(inspect/report, VMS/NVR preservation, passive RTSP, edge, integration).
-From M2 on, each milestone also reviews how a new domain capability should
-appear to an Agent.
+`v0.1.0` is the published file-based reference lab. Current `main` also contains
+the experimental M1.5 Agent interface and M2 inspect/report work; neither is a
+new tagged release. Later milestones continue with VMS/NVR preservation,
+passive RTSP, edge, and integration work. Each milestone also reviews whether a
+new domain capability should appear to an Agent; M2 did not add Agent exposure.
 
 See [`docs/roadmap.md`](docs/roadmap.md).
 
@@ -212,6 +239,8 @@ The Agent package depends on Pydantic and the MCP Python SDK, both MIT.
 * [`docs/architecture.md`](docs/architecture.md) — core and Agent layering
 * [`docs/m1-contracts.md`](docs/m1-contracts.md) — exit codes, trust axes, tamper semantics
 * [`docs/json-v0.1.md`](docs/json-v0.1.md) — JSON `schema_version` 0.1
+* [`docs/inspection-v0.1.md`](docs/inspection-v0.1.md) — inspect text/JSON contract
+* [`docs/schemas/media-signing-inspection-0.1.json`](docs/schemas/media-signing-inspection-0.1.json) — formal inspection JSON Schema
 * [`docs/fixtures.md`](docs/fixtures.md) — test fixture provenance
 * [`docs/release-notes-v0.1.0.md`](docs/release-notes-v0.1.0.md) — frozen GitHub Release text
 * [`docs/roadmap.md`](docs/roadmap.md) — milestones
