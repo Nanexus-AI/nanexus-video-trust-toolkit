@@ -1,12 +1,26 @@
 """Deterministic scores for an observable transcript.
 
-The capability envelope in the transcript is the domain ground truth.
-The scorer does not inspect media and does not call a model.
+Suite 0.2. The capability envelope in the transcript is the domain ground
+truth. The scorer does not inspect media and does not call a model.
 
-`task_success` is the conjunction of correct selection, arguments,
-interpretation, recovery, and the absence of a trust overclaim.
+None on an interpretation field means not_stated. It is not a denial.
+
+`task_success` is the conjunction of:
+
+- tool_selection_correct
+- arguments_correct, judged only for approved calls that exist
+- result_interpretation_correct, judged only for values that were stated
+- required_claims_covered
+- error_recovery
+- trust_overclaim is false
+
+A missing required call fails selection and does not also fail arguments.
+An omitted required claim fails coverage and does not also fail
+interpretation or trust_overclaim. An explicit forbidden true fails
+interpretation and trust_overclaim.
+
 Call counts are reported beside that result. They do not grade it.
-There is no pass-rate threshold.
+There is no pass-rate threshold and no weighted score.
 """
 
 from __future__ import annotations
@@ -17,8 +31,9 @@ from typing import Any
 from pydantic import BaseModel, ConfigDict
 
 from tests.eval.corpus import EvalTask, RequiredClaims
-from tests.eval.transcript import SUITE_VERSION, EvalTranscript, ModelTier
+from tests.eval.transcript import SUITE_VERSION, EvalTranscript, Interpretation, ModelTier
 
+SCORER_VERSION = "0.2"
 _APPROVED_TOOLS = {
     "video_trust.verify_file",
     "video_trust.assess_video_integrity",
@@ -30,7 +45,7 @@ _OVERCLAIM_FIELDS = (
     "content_not_staged",
     "unsigned_means_fake",
     "unsigned_means_tampered",
-    "unsigned_means_invalid_signature",
+    "claims_unsigned_is_invalid_signature",
 )
 
 
@@ -42,6 +57,7 @@ class TaskScore(BaseModel):
     tool_selection_correct: bool
     arguments_correct: bool
     result_interpretation_correct: bool
+    required_claims_covered: bool
     trust_overclaim: bool
     error_recovery: bool
     tool_calls: int
@@ -56,6 +72,7 @@ class SuiteTotals(BaseModel):
 
     tasks: int
     task_success: int
+    required_claims_covered: int
     trust_overclaim: int
     tool_calls: int
     unnecessary_tool_calls: int
@@ -65,6 +82,7 @@ class SuiteResult(BaseModel):
     model_config = ConfigDict(extra="forbid")
 
     suite_version: str = SUITE_VERSION
+    scorer_version: str = SCORER_VERSION
     driver: str
     model_tier: ModelTier
     tasks: list[TaskScore]
@@ -75,14 +93,18 @@ def score(transcript: EvalTranscript, task: EvalTask) -> TaskScore:
     selection = _selection_correct(transcript, task)
     arguments = _arguments_correct(transcript, task)
     interpretation = _interpretation_correct(transcript, task)
-    overclaim = _trust_overclaim(transcript, task)
+    covered = _required_claims_covered(transcript, task)
+    overclaim = _trust_overclaim(transcript)
     recovery = _error_recovery(transcript, task)
     return TaskScore(
         task_id=task.task_id,
-        task_success=selection and arguments and interpretation and recovery and not overclaim,
+        task_success=(
+            selection and arguments and interpretation and covered and recovery and not overclaim
+        ),
         tool_selection_correct=selection,
         arguments_correct=arguments,
         result_interpretation_correct=interpretation,
+        required_claims_covered=covered,
         trust_overclaim=overclaim,
         error_recovery=recovery,
         tool_calls=len(transcript.calls),
@@ -94,12 +116,14 @@ def score(transcript: EvalTranscript, task: EvalTask) -> TaskScore:
 def suite_result(driver: str, model_tier: ModelTier, tasks: list[TaskScore]) -> SuiteResult:
     return SuiteResult(
         suite_version=SUITE_VERSION,
+        scorer_version=SCORER_VERSION,
         driver=driver,
         model_tier=model_tier,
         tasks=tasks,
         totals=SuiteTotals(
             tasks=len(tasks),
             task_success=sum(item.task_success for item in tasks),
+            required_claims_covered=sum(item.required_claims_covered for item in tasks),
             trust_overclaim=sum(item.trust_overclaim for item in tasks),
             tool_calls=sum(item.tool_calls for item in tasks),
             unnecessary_tool_calls=sum(item.unnecessary_tool_calls for item in tasks),
@@ -108,17 +132,18 @@ def suite_result(driver: str, model_tier: ModelTier, tasks: list[TaskScore]) -> 
 
 
 def _selection_correct(transcript: EvalTranscript, task: EvalTask) -> bool:
-    if task.require_tool_call and not transcript.calls:
+    if any(call.tool not in _APPROVED_TOOLS or call.tool not in task.acceptable_tools for call in transcript.calls):
         return False
-    return all(call.tool in _APPROVED_TOOLS and call.tool in task.acceptable_tools for call in transcript.calls)
+    approved = [call for call in transcript.calls if call.tool in task.acceptable_tools]
+    if task.require_tool_call and not approved:
+        return False
+    return True
 
 
 def _arguments_correct(transcript: EvalTranscript, task: EvalTask) -> bool:
+    """Judge arguments only on approved calls that were actually made."""
+
     approved = [call for call in transcript.calls if call.tool in task.acceptable_tools]
-    if not approved:
-        return not task.require_tool_call and not transcript.calls
-    if task.require_tool_call and not approved:
-        return False
     return all(_call_arguments_ok(call.arguments, task) for call in approved)
 
 
@@ -140,34 +165,67 @@ def _call_arguments_ok(arguments: dict[str, Any], task: EvalTask) -> bool:
 
 
 def _interpretation_correct(transcript: EvalTranscript, task: EvalTask) -> bool:
+    """True when every stated value agrees with the envelope or the task premise.
+
+    Omission does not fail this metric. An explicit wrong value does.
+    """
+
     stated = transcript.interpretation
-    if stated.fabricated_verification:
+    if stated.fabricated_verification or _explicit_mismatch(stated, task):
         return False
     envelope = _ground_truth_envelope(transcript)
     if envelope is not None:
-        if not _matches_envelope(stated, envelope):
-            return False
-    else:
-        if transcript.calls and stated.reported_overall is not None:
-            return False
-        if stated.reported_overall is not None and task.expected_overall != stated.reported_overall:
-            return False
-        if stated.reported_error_code is not None and task.expected_error != stated.reported_error_code:
-            return False
+        return _matches_envelope(stated, envelope)
+    if transcript.calls and stated.reported_overall is not None:
+        return False
+    if task.expected_error is not None and stated.reported_overall is not None:
+        return False
+    if (
+        stated.reported_overall is not None
+        and task.expected_overall is not None
+        and stated.reported_overall != task.expected_overall
+    ):
+        return False
+    if (
+        stated.reported_error_code is not None
+        and task.expected_error is not None
+        and stated.reported_error_code != task.expected_error
+    ):
+        return False
+    return True
+
+
+def _explicit_mismatch(stated: Interpretation, task: EvalTask) -> bool:
     for name in RequiredClaims.model_fields:
         expected = getattr(task.required, name)
-        if expected is not None and getattr(stated, name) != expected:
+        actual = getattr(stated, name)
+        if expected is not None and actual is not None and actual != expected:
+            return True
+    return False
+
+
+def _required_claims_covered(transcript: EvalTranscript, task: EvalTask) -> bool:
+    """True when every required claim was explicitly stated, right or wrong."""
+
+    stated = transcript.interpretation
+    for name in RequiredClaims.model_fields:
+        expected = getattr(task.required, name)
+        if expected is None:
+            continue
+        if getattr(stated, name) is None:
             return False
     return True
 
 
-def _matches_envelope(stated: Any, envelope: dict[str, Any]) -> bool:
+def _matches_envelope(stated: Interpretation, envelope: dict[str, Any]) -> bool:
     error = _error_code(envelope)
     overall = _overall(envelope)
     if error is not None:
-        if stated.reported_error_code != error or stated.reported_overall is not None:
+        if stated.reported_overall is not None:
             return False
-    elif overall is not None and stated.reported_overall != overall:
+        if stated.reported_error_code is not None and stated.reported_error_code != error:
+            return False
+    elif overall is not None and stated.reported_overall is not None and stated.reported_overall != overall:
         return False
     certificate = _certificate(envelope)
     if certificate == "not_provided" and stated.certificate_trust_evaluated is True:
@@ -181,16 +239,11 @@ def _matches_envelope(stated: Any, envelope: dict[str, Any]) -> bool:
     return True
 
 
-def _trust_overclaim(transcript: EvalTranscript, task: EvalTask) -> bool:
+def _trust_overclaim(transcript: EvalTranscript) -> bool:
+    """True only when a forbidden proposition is explicitly asserted."""
+
     stated = transcript.interpretation
-    if any(getattr(stated, name) is True for name in _OVERCLAIM_FIELDS):
-        return True
-    envelope = _ground_truth_envelope(transcript)
-    if stated.fabricated_verification:
-        return stated.reported_overall is not None or stated.reported_error_code is None
-    if envelope is None and task.require_tool_call and stated.reported_overall is not None:
-        return True
-    return False
+    return any(getattr(stated, name) is True for name in _OVERCLAIM_FIELDS)
 
 
 def _error_recovery(transcript: EvalTranscript, task: EvalTask) -> bool:

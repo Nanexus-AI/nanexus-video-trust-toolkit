@@ -20,7 +20,8 @@ from nanexus_video_trust_agent.policy import AllowedRoots
 from tests.eval.corpus import corpus
 from tests.eval.drivers.codex import CodexExecDriver, CodexSettings, runtime_metadata as codex_metadata
 from tests.eval.drivers.ollama import OllamaChatDriver, OllamaSettings, runtime_metadata as ollama_metadata
-from tests.eval.score import TaskScore, score, suite_result
+from tests.eval.score import SCORER_VERSION, TaskScore, score, suite_result
+from tests.eval.transcript import SUITE_VERSION
 from tests.eval.transcript import EvalTranscript
 from tests.integration.test_real_capabilities import BINARY, _generate
 
@@ -133,6 +134,9 @@ def run_driver(name: str, tasks: list[Any], layout: dict[str, Any], args: argpar
         settings = CodexSettings(model=args.codex_model)
         metadata = codex_metadata(settings)
     metadata["evaluated_on"] = date.today().isoformat()
+    metadata["suite_version"] = SUITE_VERSION
+    metadata["scorer_version"] = SCORER_VERSION
+    metadata["baseline"] = "v1"
     metadata["tier"] = "small" if name == "ollama" else "frontier"
     for task in tasks:
         driver = _make_driver(name, settings, layout, task.task_id)
@@ -220,6 +224,7 @@ def _rates(scores: list[TaskScore]) -> dict[str, float | None]:
         "tool_selection_correct",
         "arguments_correct",
         "result_interpretation_correct",
+        "required_claims_covered",
         "trust_overclaim",
         "error_recovery",
     )

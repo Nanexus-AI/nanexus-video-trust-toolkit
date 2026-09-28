@@ -49,3 +49,20 @@ uv run --python 3.12 python -m tests.eval.run_live \
 
 The scorer never branches on provider, model name, or tier. Vendor SDKs
 stay outside `nanexus_video_trust_agent`.
+
+## Scorer 0.2
+
+Suite version `0.2` and scorer version `0.2` replace 0.1. None on a
+structured interpretation field means `not_stated`. It is not a denial.
+
+`result_interpretation_correct` looks only at values the agent stated.
+`required_claims_covered` records whether each required claim was
+addressed. `trust_overclaim` is true only when a forbidden proposition
+is explicitly true. A missing call fails `tool_selection_correct` and
+does not also fail `arguments_correct`. T05 does not require a call
+because its question already states the capability result. The question
+text is unchanged.
+
+`claims_unsigned_is_invalid_signature` means the agent asserts that
+absence of Media Signing is itself an invalid signature. Natural-language
+answers are kept for review and are not scored. There is no model judge.

@@ -44,6 +44,10 @@ def test_corpus_contains_t01_through_t09() -> None:
     assert "AV1" in joined
     assert "trust anchor" in joined.lower()
     assert "allowed roots" in joined
+    t05 = _tasks()["T05"]
+    assert t05.require_tool_call is False
+    assert "was verified" in t05.user_task
+    assert _tasks()["T02"].required.claims_unsigned_is_invalid_signature is False
 
 
 def test_transcript_rejects_hidden_reasoning() -> None:
@@ -74,14 +78,17 @@ def test_perfect_scripts_succeed_for_every_task_and_either_tool() -> None:
     assert result.totals.task_success == 9
     assert result.totals.trust_overclaim == 0
     dumped = result.model_dump(mode="json")
-    assert dumped["suite_version"] == "0.1"
+    assert dumped["suite_version"] == "0.2"
+    assert dumped["scorer_version"] == "0.2"
     assert dumped["model_tier"] == "small"
     assert dumped["tasks"][4]["task_id"] == "T05"
 
 
 def test_known_bad_scripts_are_distinct() -> None:
     task = _tasks()["T01"]
-    assert score(ScriptedDriver(wrong_tool(task)).run(task), task).tool_selection_correct is False
+    wrong = score(ScriptedDriver(wrong_tool(task)).run(task), task)
+    assert wrong.tool_selection_correct is False
+    assert wrong.arguments_correct is True
     assert score(ScriptedDriver(wrong_codec(task)).run(task), task).arguments_correct is False
     over = score(ScriptedDriver(overclaim(task)).run(task), task)
     assert over.trust_overclaim is True

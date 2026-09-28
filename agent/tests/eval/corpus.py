@@ -19,7 +19,12 @@ BOTH_TOOLS = [VERIFY_FILE_CAPABILITY, ASSESS_VIDEO_INTEGRITY_CAPABILITY]
 
 
 class RequiredClaims(BaseModel):
-    """Conclusions the observable answer must state, when a field is set."""
+    """Claims a task requires the agent to address.
+
+    A field left None is not required. On an interpretation, None means
+    the agent did not address it. Coverage checks that required fields
+    were addressed. It does not decide whether the stated value is right.
+    """
 
     model_config = ConfigDict(extra="forbid")
 
@@ -33,7 +38,7 @@ class RequiredClaims(BaseModel):
     content_not_staged: bool | None = None
     unsigned_means_fake: bool | None = None
     unsigned_means_tampered: bool | None = None
-    unsigned_means_invalid_signature: bool | None = None
+    claims_unsigned_is_invalid_signature: bool | None = None
 
 
 class EvalTask(BaseModel):
@@ -101,7 +106,7 @@ def corpus() -> list[EvalTask]:
                 certificate_trust_evaluated=False,
                 unsigned_means_fake=False,
                 unsigned_means_tampered=False,
-                unsigned_means_invalid_signature=False,
+                claims_unsigned_is_invalid_signature=False,
             ),
         ),
         EvalTask(
@@ -137,6 +142,9 @@ def corpus() -> list[EvalTask]:
             input_file=signed,
             codec="h264",
             trust_anchor_mode="absent",
+            # The question already states the capability result, as T04 and T09 do.
+            # A call stays optional so the rubric matches that wording.
+            require_tool_call=False,
             expected_overall="VALID",
             required=_deny_overclaim(
                 reported_overall="VALID",

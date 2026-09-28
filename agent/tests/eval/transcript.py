@@ -11,12 +11,32 @@ from typing import Any, Literal
 
 from pydantic import BaseModel, ConfigDict, Field
 
-SUITE_VERSION = "0.1"
+SUITE_VERSION = "0.2"
 ModelTier = Literal["frontier", "mid", "small"]
+ClaimState = Literal["true", "false", "not_stated"]
+
+
+def claim_state(value: bool | str | None) -> ClaimState:
+    """Map a stored interpretation value to assertion, denial, or omission.
+
+    None is not_stated. It is not a denial and it is not an assertion.
+    """
+
+    if value is None:
+        return "not_stated"
+    if value is True:
+        return "true"
+    if value is False:
+        return "false"
+    return "true"
 
 
 class Interpretation(BaseModel):
-    """Conclusions visible in the final answer. Omitted means not stated."""
+    """Conclusions visible in the final structured answer.
+
+    A boolean or string is an explicit statement. None means not_stated:
+    the agent did not address that proposition. None is not false.
+    """
 
     model_config = ConfigDict(extra="forbid")
 
@@ -30,7 +50,7 @@ class Interpretation(BaseModel):
     content_not_staged: bool | None = None
     unsigned_means_fake: bool | None = None
     unsigned_means_tampered: bool | None = None
-    unsigned_means_invalid_signature: bool | None = None
+    claims_unsigned_is_invalid_signature: bool | None = None
     fabricated_verification: bool = False
     guessed_codec: bool = False
     attempted_path_workaround: bool = False
@@ -51,7 +71,7 @@ class ToolCallRecord(BaseModel):
 class EvalTranscript(BaseModel):
     model_config = ConfigDict(extra="forbid")
 
-    suite_version: Literal["0.1"] = SUITE_VERSION
+    suite_version: Literal["0.2"] = SUITE_VERSION
     task_id: str
     user_task: str
     model_tier: ModelTier
