@@ -44,6 +44,10 @@ inspect_test_script = meson.project_source_root() / 'tests/integration/test_insp
 inspection_schema = meson.project_source_root() / 'docs/schemas/media-signing-inspection-0.1.json'
 preservation_schema = meson.project_source_root() / 'docs/schemas/media-signing-preservation-assessment-0.1.json'
 compare_test_script = meson.project_source_root() / 'tests/integration/test_compare_cli.py'
+preservation_matrix_script = meson.project_source_root() / 'tests/tools/run_preservation_matrix.py'
+preservation_matrix_manifest = meson.project_source_root() / 'tests/fixtures/preservation-matrix.json'
+ffmpeg = find_program('ffmpeg', required: false)
+ffprobe = find_program('ffprobe', required: false)
 
 verify_runner = find_program('bash')
 
@@ -201,3 +205,29 @@ test(
   timeout: 180,
   is_parallel: false,
 )
+
+if ffmpeg.found() and ffprobe.found()
+  test(
+    'synthetic_preservation_matrix',
+    verify_runner,
+    args: [
+      '-lc',
+      'set -euo pipefail; '
+      + 'OMS_SIGN_ANNEXB="' + oms_sign_annexb.full_path() + '" '
+      + '"' + gen_script + '" "' + fixture_dir + '"; '
+      + 'PYTHONPATH=/usr/lib/python3/dist-packages '
+      + '"' + python.full_path() + '" "' + preservation_matrix_script + '" '
+      + '--video-trust "' + video_trust.full_path() + '" '
+      + '--fixture-root "' + fixture_dir + '" '
+      + '--schema "' + preservation_schema + '" '
+      + '--manifest "' + preservation_matrix_manifest + '" '
+      + '--ffmpeg "' + ffmpeg.full_path() + '" '
+      + '--ffprobe "' + ffprobe.full_path() + '"',
+    ],
+    depends: [video_trust, oms_sign_annexb],
+    timeout: 240,
+    is_parallel: false,
+  )
+else
+  message('Skipping synthetic preservation matrix: ffmpeg and ffprobe are optional')
+endif
