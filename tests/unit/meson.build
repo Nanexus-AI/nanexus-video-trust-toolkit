@@ -40,6 +40,13 @@ test_correlation = executable(
 )
 test('artifact_nal_correlation', test_correlation)
 
+test_preservation = executable(
+  'test_preservation',
+  'test_preservation.cpp',
+  dependencies: videotrust_dep,
+)
+test('preservation_derivation', test_preservation)
+
 test_render = executable(
   'test_render',
   'test_render.cpp',

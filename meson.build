@@ -77,6 +77,7 @@ videotrust_core = static_library(
     'src/core/correlation.cpp',
     'src/core/error.cpp',
     'src/core/nal_classify.cpp',
+    'src/core/preservation.cpp',
     'src/core/result.cpp',
     'src/render/render.cpp',
     'src/signing/sign.cpp',
