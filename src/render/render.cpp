@@ -70,6 +70,60 @@ void RenderOptionalText(std::ostringstream& o,
   }
 }
 
+void RenderArtifactSnapshot(std::ostringstream& o,
+                            const ArtifactEvidence& artifact,
+                            const InspectionResult& inspection) {
+  o << "{\"codec\":\"" << ToString(inspection.verification.codec) << "\",";
+  o << "\"byte_size\":" << artifact.byte_size << ",";
+  o << "\"sha256\":{\"algorithm\":\"sha256\",\"value\":\""
+    << JsonEscape(artifact.sha256) << "\"},";
+  o << "\"nal_count\":" << artifact.nal_count << ",";
+  o << "\"signing_sei_count\":" << artifact.signing_sei_count << ",";
+  o << "\"verification\":{";
+  o << "\"media_signing\":\"" << ToString(inspection.verification.media_signing)
+    << "\",";
+  o << "\"signature_integrity\":\""
+    << ToString(inspection.verification.signature_integrity) << "\",";
+  o << "\"continuity\":\"" << ToString(inspection.verification.continuity)
+    << "\",";
+  o << "\"verification_completeness\":\""
+    << ToString(inspection.verification.completeness) << "\",";
+  o << "\"certificate_status\":\""
+    << ToString(inspection.verification.certificate) << "\",";
+  o << "\"source_authenticity\":\""
+    << ToString(inspection.verification.source_authenticity) << "\",";
+  o << "\"public_key_has_changed\":"
+    << (inspection.verification.public_key_has_changed ? "true" : "false") << ",";
+  o << "\"overall\":\""
+    << ToString(DeriveOverallState(inspection.verification)) << "\"},";
+  o << "\"inspection\":{";
+  o << "\"pending_nalus\":" << inspection.accumulated.pending_nalus << ",";
+  o << "\"pending_frames\":" << inspection.accumulated.pending_frames << ",";
+  o << "\"pending_hashable_nalus\":";
+  RenderNullableInteger(o, inspection.latest.pending_hashable_nalus);
+  o << "}}";
+}
+
+void RenderRoleCounts(std::ostringstream& o, const NalRoleCounts& roles) {
+  o << "{\"vcl\":" << roles.vcl << ",";
+  o << "\"sei\":" << roles.sei << ",";
+  o << "\"signing_sei\":" << roles.signing_sei << ",";
+  o << "\"parameter_set\":" << roles.parameter_set << ",";
+  o << "\"other\":" << roles.other << "}";
+}
+
+void RenderUnmatchedSummary(std::ostringstream& o,
+                            const IndexSamples& samples,
+                            const NalRoleCounts& roles) {
+  o << "{\"total_count\":" << samples.total_count << ",";
+  o << "\"sample_count\":" << samples.indices.size() << ",";
+  o << "\"samples_truncated\":"
+    << (samples.samples_truncated ? "true" : "false") << ",";
+  o << "\"roles\":";
+  RenderRoleCounts(o, roles);
+  o << "}";
+}
+
 }  // namespace
 
 std::string RenderText(const VerificationResult& result) {
@@ -257,6 +311,130 @@ std::string RenderInspectionJson(const InspectionResult& result) {
   o << "\"serial_number\":" << NullableStringJson(result.vendor.serial_number);
   o << "}";
   o << "}\n";
+  return o.str();
+}
+
+std::string RenderPreservationJson(const PreservationAssessment& assessment) {
+  const auto& correlation = assessment.correlation;
+  std::ostringstream o;
+  o << "{";
+  o << "\"document_type\":\"media_signing_preservation_assessment\",";
+  o << "\"schema_version\":\"0.1\",";
+  o << "\"before\":";
+  RenderArtifactSnapshot(o, correlation.before, assessment.before);
+  o << ",\"after\":";
+  RenderArtifactSnapshot(o, correlation.after, assessment.after);
+
+  o << ",\"transformation\":{";
+  o << "\"kind\":\"" << ToString(assessment.transformation.kind) << "\",";
+  o << "\"label\":" << NullableStringJson(assessment.transformation.label) << ",";
+  o << "\"pipeline_id\":"
+    << NullableStringJson(assessment.transformation.pipeline_id) << ",";
+  o << "\"tool_version\":"
+    << NullableStringJson(assessment.transformation.tool_version) << ",";
+  o << "\"log_digest\":"
+    << NullableStringJson(assessment.transformation.log_digest) << ",";
+  o << "\"trust\":\"caller_declared_untrusted\"}";
+
+  o << ",\"artifact_identity\":{";
+  o << "\"byte_relation\":\"" << ToString(assessment.artifact_relation)
+    << "\"}";
+
+  o << ",\"correlation\":{";
+  o << "\"quality\":\"" << ToString(assessment.correlation_quality) << "\",";
+  o << "\"stream_relation\":\"" << ToString(assessment.stream_relation)
+    << "\",";
+  o << "\"sequence_equivalent\":\""
+    << ToString(correlation.nal.sequence_equivalent) << "\",";
+  o << "\"after_is_ordered_subsequence\":\""
+    << ToString(correlation.nal.after_is_ordered_subsequence) << "\",";
+  o << "\"unique_subsequence_alignment\":\""
+    << ToString(correlation.nal.unique_subsequence_alignment) << "\",";
+  o << "\"reordered\":\"" << ToString(correlation.nal.reordered) << "\",";
+  o << "\"duplicated_after\":\""
+    << ToString(correlation.nal.duplicated_after) << "\",";
+  o << "\"normalized_payload_matches\":"
+    << correlation.nal.normalized_payload_matches << ",";
+  o << "\"unique_before_range\":";
+  if (correlation.nal.unique_before_start && correlation.nal.unique_before_end) {
+    o << "{\"start_nal_index\":" << *correlation.nal.unique_before_start << ",";
+    o << "\"end_nal_index\":" << *correlation.nal.unique_before_end << "}";
+  } else {
+    o << "null";
+  }
+  o << ",\"unmatched_before\":";
+  RenderUnmatchedSummary(o, correlation.nal.unmatched_before,
+                         correlation.nal.unmatched_before_roles);
+  o << ",\"unmatched_after\":";
+  RenderUnmatchedSummary(o, correlation.nal.unmatched_after,
+                         correlation.nal.unmatched_after_roles);
+  o << ",\"diagnostic_detail_bounded\":"
+    << (correlation.nal.diagnostic_detail_bounded ? "true" : "false") << ",";
+  o << "\"signing_metadata\":{";
+  o << "\"relation\":\"" << ToString(assessment.signing_metadata_relation)
+    << "\",";
+  o << "\"before_count\":" << correlation.signing_sei.before_count << ",";
+  o << "\"after_count\":" << correlation.signing_sei.after_count << ",";
+  o << "\"matched_payload_count\":"
+    << correlation.signing_sei.matched_payload_count << ",";
+  o << "\"missing_from_after_count\":"
+    << correlation.signing_sei.missing_from_after_count << ",";
+  o << "\"unmatched_after_count\":"
+    << correlation.signing_sei.unmatched_after_count << ",";
+  o << "\"correlation_complete\":\""
+    << ToString(correlation.signing_sei.correlation_complete) << "\",";
+  o << "\"before_classification_complete\":"
+    << (correlation.before.signing_sei_classification_complete ? "true" : "false")
+    << ",";
+  o << "\"after_classification_complete\":"
+    << (correlation.after.signing_sei_classification_complete ? "true" : "false")
+    << "}}";
+
+  o << ",\"coverage\":{\"state\":\"" << ToString(assessment.source_coverage)
+    << "\"}";
+  o << ",\"applicability\":{\"media_signing_preservation\":\""
+    << ToString(assessment.applicability) << "\"}";
+  o << ",\"preservation\":{\"media_signing_evidence\":\""
+    << ToString(assessment.media_signing_preservation) << "\"}";
+
+  const auto& verification = assessment.verification_transitions;
+  const auto& inspection = assessment.inspection_transitions;
+  o << ",\"transitions\":{";
+  o << "\"verification\":{";
+  o << "\"before_overall\":\"" << ToString(verification.before_overall) << "\",";
+  o << "\"after_overall\":\"" << ToString(verification.after_overall) << "\",";
+  o << "\"media_signing\":\"" << ToString(verification.media_signing) << "\",";
+  o << "\"signature_integrity\":\""
+    << ToString(verification.signature_integrity) << "\",";
+  o << "\"continuity\":\"" << ToString(verification.continuity) << "\",";
+  o << "\"verification_completeness\":\""
+    << ToString(verification.completeness) << "\",";
+  o << "\"certificate\":\"" << ToString(verification.certificate) << "\",";
+  o << "\"public_key_observation\":\""
+    << ToString(verification.public_key_observation) << "\"},";
+  o << "\"inspection\":{";
+  o << "\"pending_nalus\":\"" << ToString(inspection.pending_nalus) << "\",";
+  o << "\"pending_frames\":\"" << ToString(inspection.pending_frames) << "\",";
+  o << "\"accumulated_timestamps\":\""
+    << ToString(inspection.accumulated_timestamps) << "\",";
+  o << "\"latest_timestamps\":\"" << ToString(inspection.latest_timestamps)
+    << "\"}}";
+
+  o << ",\"findings\":[";
+  for (std::size_t i = 0; i < assessment.findings.size(); ++i) {
+    if (i) o << ",";
+    o << "{\"code\":\"" << ToString(assessment.findings[i].code)
+      << "\",\"message\":\"" << JsonEscape(assessment.findings[i].message)
+      << "\"}";
+  }
+  o << "],\"limitations\":[";
+  for (std::size_t i = 0; i < assessment.limitations.size(); ++i) {
+    if (i) o << ",";
+    o << "{\"code\":\"" << ToString(assessment.limitations[i].code)
+      << "\",\"message\":\"" << JsonEscape(assessment.limitations[i].message)
+      << "\"}";
+  }
+  o << "]}\n";
   return o.str();
 }
 

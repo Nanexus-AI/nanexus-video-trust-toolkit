@@ -331,53 +331,146 @@ PreservationAssessment DerivePreservationAssessment(
   return out;
 }
 
-#define VT_ENUM_STRING_CASE(value) case value: return #value
-
 const char* ToString(ArtifactRelation value) noexcept {
-  switch (value) { VT_ENUM_STRING_CASE(ArtifactRelation::Identical); VT_ENUM_STRING_CASE(ArtifactRelation::Different); VT_ENUM_STRING_CASE(ArtifactRelation::Indeterminate); }
-  return "ArtifactRelation::Indeterminate";
+  switch (value) {
+    case ArtifactRelation::Identical: return "identical";
+    case ArtifactRelation::Different: return "different";
+    case ArtifactRelation::Indeterminate: return "indeterminate";
+  }
+  return "indeterminate";
 }
 const char* ToString(StreamRelation value) noexcept {
-  switch (value) { VT_ENUM_STRING_CASE(StreamRelation::Equivalent); VT_ENUM_STRING_CASE(StreamRelation::OrderedSubset); VT_ENUM_STRING_CASE(StreamRelation::StructurallyChanged); VT_ENUM_STRING_CASE(StreamRelation::Indeterminate); }
-  return "StreamRelation::Indeterminate";
+  switch (value) {
+    case StreamRelation::Equivalent: return "equivalent";
+    case StreamRelation::OrderedSubset: return "ordered_subset";
+    case StreamRelation::StructurallyChanged: return "structurally_changed";
+    case StreamRelation::Indeterminate: return "indeterminate";
+  }
+  return "indeterminate";
 }
 const char* ToString(SourceCoverage value) noexcept {
-  switch (value) { VT_ENUM_STRING_CASE(SourceCoverage::Full); VT_ENUM_STRING_CASE(SourceCoverage::Subset); VT_ENUM_STRING_CASE(SourceCoverage::Unknown); }
-  return "SourceCoverage::Unknown";
+  switch (value) {
+    case SourceCoverage::Full: return "full";
+    case SourceCoverage::Subset: return "subset";
+    case SourceCoverage::Unknown: return "unknown";
+  }
+  return "unknown";
 }
 const char* ToString(PreservationApplicability value) noexcept {
-  switch (value) { VT_ENUM_STRING_CASE(PreservationApplicability::Applicable); VT_ENUM_STRING_CASE(PreservationApplicability::NotApplicable); VT_ENUM_STRING_CASE(PreservationApplicability::Indeterminate); }
-  return "PreservationApplicability::Indeterminate";
+  switch (value) {
+    case PreservationApplicability::Applicable: return "applicable";
+    case PreservationApplicability::NotApplicable: return "not_applicable";
+    case PreservationApplicability::Indeterminate: return "indeterminate";
+  }
+  return "indeterminate";
 }
 const char* ToString(MediaSigningPreservation value) noexcept {
-  switch (value) { VT_ENUM_STRING_CASE(MediaSigningPreservation::Preserved); VT_ENUM_STRING_CASE(MediaSigningPreservation::PartiallyPreserved); VT_ENUM_STRING_CASE(MediaSigningPreservation::NotPreserved); VT_ENUM_STRING_CASE(MediaSigningPreservation::Indeterminate); }
-  return "MediaSigningPreservation::Indeterminate";
+  switch (value) {
+    case MediaSigningPreservation::Preserved: return "preserved";
+    case MediaSigningPreservation::PartiallyPreserved:
+      return "partially_preserved";
+    case MediaSigningPreservation::NotPreserved: return "not_preserved";
+    case MediaSigningPreservation::Indeterminate: return "indeterminate";
+  }
+  return "indeterminate";
 }
 const char* ToString(SigningMetadataRelation value) noexcept {
-  switch (value) { VT_ENUM_STRING_CASE(SigningMetadataRelation::Equivalent); VT_ENUM_STRING_CASE(SigningMetadataRelation::RetainedForSubset); VT_ENUM_STRING_CASE(SigningMetadataRelation::PartiallyRetained); VT_ENUM_STRING_CASE(SigningMetadataRelation::MissingAfter); VT_ENUM_STRING_CASE(SigningMetadataRelation::ReplacedOrUnmatched); VT_ENUM_STRING_CASE(SigningMetadataRelation::NotApplicable); VT_ENUM_STRING_CASE(SigningMetadataRelation::Indeterminate); }
-  return "SigningMetadataRelation::Indeterminate";
+  switch (value) {
+    case SigningMetadataRelation::Equivalent: return "equivalent";
+    case SigningMetadataRelation::RetainedForSubset:
+      return "retained_for_subset";
+    case SigningMetadataRelation::PartiallyRetained:
+      return "partially_retained";
+    case SigningMetadataRelation::MissingAfter: return "missing_after";
+    case SigningMetadataRelation::ReplacedOrUnmatched:
+      return "replaced_or_unmatched";
+    case SigningMetadataRelation::NotApplicable: return "not_applicable";
+    case SigningMetadataRelation::Indeterminate: return "indeterminate";
+  }
+  return "indeterminate";
 }
 const char* ToString(ChangeKind value) noexcept {
-  switch (value) { VT_ENUM_STRING_CASE(ChangeKind::Unchanged); VT_ENUM_STRING_CASE(ChangeKind::Improved); VT_ENUM_STRING_CASE(ChangeKind::Degraded); VT_ENUM_STRING_CASE(ChangeKind::Changed); VT_ENUM_STRING_CASE(ChangeKind::Indeterminate); }
-  return "ChangeKind::Indeterminate";
+  switch (value) {
+    case ChangeKind::Unchanged: return "unchanged";
+    case ChangeKind::Improved: return "improved";
+    case ChangeKind::Degraded: return "degraded";
+    case ChangeKind::Changed: return "changed";
+    case ChangeKind::Indeterminate: return "indeterminate";
+  }
+  return "indeterminate";
 }
 const char* ToString(CorrelationQuality value) noexcept {
-  switch (value) { VT_ENUM_STRING_CASE(CorrelationQuality::Complete); VT_ENUM_STRING_CASE(CorrelationQuality::Ambiguous); VT_ENUM_STRING_CASE(CorrelationQuality::ResourceBounded); VT_ENUM_STRING_CASE(CorrelationQuality::Incomplete); }
-  return "CorrelationQuality::Incomplete";
+  switch (value) {
+    case CorrelationQuality::Complete: return "complete";
+    case CorrelationQuality::Ambiguous: return "ambiguous";
+    case CorrelationQuality::ResourceBounded: return "resource_bounded";
+    case CorrelationQuality::Incomplete: return "incomplete";
+  }
+  return "incomplete";
 }
 const char* ToString(TransformationKind value) noexcept {
-  switch (value) { VT_ENUM_STRING_CASE(TransformationKind::Unspecified); VT_ENUM_STRING_CASE(TransformationKind::Transparent); VT_ENUM_STRING_CASE(TransformationKind::Remux); VT_ENUM_STRING_CASE(TransformationKind::Clip); VT_ENUM_STRING_CASE(TransformationKind::Segment); VT_ENUM_STRING_CASE(TransformationKind::Concatenate); VT_ENUM_STRING_CASE(TransformationKind::Transcode); VT_ENUM_STRING_CASE(TransformationKind::MetadataChange); VT_ENUM_STRING_CASE(TransformationKind::TimestampRewrite); VT_ENUM_STRING_CASE(TransformationKind::ProprietaryOrUnknown); }
-  return "TransformationKind::Unspecified";
+  switch (value) {
+    case TransformationKind::Unspecified: return "unspecified";
+    case TransformationKind::Transparent: return "transparent";
+    case TransformationKind::Remux: return "remux";
+    case TransformationKind::Clip: return "clip";
+    case TransformationKind::Segment: return "segment";
+    case TransformationKind::Concatenate: return "concatenate";
+    case TransformationKind::Transcode: return "transcode";
+    case TransformationKind::MetadataChange: return "metadata_change";
+    case TransformationKind::TimestampRewrite: return "timestamp_rewrite";
+    case TransformationKind::ProprietaryOrUnknown:
+      return "proprietary_or_unknown";
+  }
+  return "unspecified";
 }
 const char* ToString(PreservationFindingCode value) noexcept {
-  switch (value) { VT_ENUM_STRING_CASE(PreservationFindingCode::ExactArtifactMatch); VT_ENUM_STRING_CASE(PreservationFindingCode::NormalizedStreamEquivalent); VT_ENUM_STRING_CASE(PreservationFindingCode::OrderedSubsetEstablished); VT_ENUM_STRING_CASE(PreservationFindingCode::SourceCoverageUnknown); VT_ENUM_STRING_CASE(PreservationFindingCode::SigningEvidenceRetained); VT_ENUM_STRING_CASE(PreservationFindingCode::SigningEvidencePartiallyRetained); VT_ENUM_STRING_CASE(PreservationFindingCode::SigningEvidenceMissing); VT_ENUM_STRING_CASE(PreservationFindingCode::SigningEvidenceUnmatched); VT_ENUM_STRING_CASE(PreservationFindingCode::SigningContextIncomplete); VT_ENUM_STRING_CASE(PreservationFindingCode::CorrelationAmbiguous); VT_ENUM_STRING_CASE(PreservationFindingCode::CorrelationResourceBounded); VT_ENUM_STRING_CASE(PreservationFindingCode::VerificationDegraded); VT_ENUM_STRING_CASE(PreservationFindingCode::PreservationNotApplicable); }
-  return "PreservationFindingCode::SigningContextIncomplete";
+  switch (value) {
+    case PreservationFindingCode::ExactArtifactMatch:
+      return "EXACT_ARTIFACT_MATCH";
+    case PreservationFindingCode::NormalizedStreamEquivalent:
+      return "NORMALIZED_STREAM_EQUIVALENT";
+    case PreservationFindingCode::OrderedSubsetEstablished:
+      return "ORDERED_SUBSET_ESTABLISHED";
+    case PreservationFindingCode::SourceCoverageUnknown:
+      return "SOURCE_COVERAGE_UNKNOWN";
+    case PreservationFindingCode::SigningEvidenceRetained:
+      return "SIGNING_EVIDENCE_RETAINED";
+    case PreservationFindingCode::SigningEvidencePartiallyRetained:
+      return "SIGNING_EVIDENCE_PARTIALLY_RETAINED";
+    case PreservationFindingCode::SigningEvidenceMissing:
+      return "SIGNING_EVIDENCE_MISSING";
+    case PreservationFindingCode::SigningEvidenceUnmatched:
+      return "SIGNING_EVIDENCE_UNMATCHED";
+    case PreservationFindingCode::SigningContextIncomplete:
+      return "SIGNING_CONTEXT_INCOMPLETE";
+    case PreservationFindingCode::CorrelationAmbiguous:
+      return "CORRELATION_AMBIGUOUS";
+    case PreservationFindingCode::CorrelationResourceBounded:
+      return "CORRELATION_RESOURCE_BOUNDED";
+    case PreservationFindingCode::VerificationDegraded:
+      return "VERIFICATION_DEGRADED";
+    case PreservationFindingCode::PreservationNotApplicable:
+      return "PRESERVATION_NOT_APPLICABLE";
+  }
+  return "SIGNING_CONTEXT_INCOMPLETE";
 }
 const char* ToString(PreservationLimitationCode value) noexcept {
-  switch (value) { VT_ENUM_STRING_CASE(PreservationLimitationCode::SourceAuthenticityNotEstablished); VT_ENUM_STRING_CASE(PreservationLimitationCode::VmsTrustNotEstablished); VT_ENUM_STRING_CASE(PreservationLimitationCode::SuppliedBeforeCompletenessNotEstablished); VT_ENUM_STRING_CASE(PreservationLimitationCode::ChainOfCustodyNotEstablished); VT_ENUM_STRING_CASE(PreservationLimitationCode::TransformationContextUntrusted); VT_ENUM_STRING_CASE(PreservationLimitationCode::SubsetDoesNotEstablishFullExport); }
-  return "PreservationLimitationCode::SourceAuthenticityNotEstablished";
+  switch (value) {
+    case PreservationLimitationCode::SourceAuthenticityNotEstablished:
+      return "SOURCE_AUTHENTICITY_NOT_ESTABLISHED";
+    case PreservationLimitationCode::VmsTrustNotEstablished:
+      return "VMS_TRUST_NOT_ESTABLISHED";
+    case PreservationLimitationCode::SuppliedBeforeCompletenessNotEstablished:
+      return "SUPPLIED_BEFORE_COMPLETENESS_NOT_ESTABLISHED";
+    case PreservationLimitationCode::ChainOfCustodyNotEstablished:
+      return "CHAIN_OF_CUSTODY_NOT_ESTABLISHED";
+    case PreservationLimitationCode::TransformationContextUntrusted:
+      return "TRANSFORMATION_CONTEXT_UNTRUSTED";
+    case PreservationLimitationCode::SubsetDoesNotEstablishFullExport:
+      return "SUBSET_DOES_NOT_ESTABLISH_FULL_EXPORT";
+  }
+  return "SOURCE_AUTHENTICITY_NOT_ESTABLISHED";
 }
-
-#undef VT_ENUM_STRING_CASE
 
 }  // namespace videotrust

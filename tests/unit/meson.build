@@ -47,6 +47,13 @@ test_preservation = executable(
 )
 test('preservation_derivation', test_preservation)
 
+test_preservation_render = executable(
+  'test_preservation_render',
+  'test_preservation_render.cpp',
+  dependencies: videotrust_dep,
+)
+test('preservation_json_render', test_preservation_render)
+
 test_render = executable(
   'test_render',
   'test_render.cpp',
@@ -62,6 +69,16 @@ test(
     meson.project_source_root() / 'tests/contract/test_inspection_schema.py',
     meson.project_source_root() / 'docs/schemas/media-signing-inspection-0.1.json',
     test_render.full_path(),
+  ],
+)
+
+test(
+  'preservation_json_schema',
+  python,
+  args: [
+    meson.project_source_root() / 'tests/contract/test_preservation_schema.py',
+    meson.project_source_root() / 'docs/schemas/media-signing-preservation-assessment-0.1.json',
+    test_preservation_render.full_path(),
   ],
 )
 

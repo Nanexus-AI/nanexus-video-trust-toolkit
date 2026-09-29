@@ -1,0 +1,381 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "urn:nanexus:schema:media-signing-preservation-assessment:0.1",
+  "title": "Nanexus Media Signing Preservation Assessment 0.1",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "document_type",
+    "schema_version",
+    "before",
+    "after",
+    "transformation",
+    "artifact_identity",
+    "correlation",
+    "coverage",
+    "applicability",
+    "preservation",
+    "transitions",
+    "findings",
+    "limitations"
+  ],
+  "properties": {
+    "document_type": { "const": "media_signing_preservation_assessment" },
+    "schema_version": { "const": "0.1" },
+    "before": { "$ref": "#/$defs/artifact_snapshot" },
+    "after": { "$ref": "#/$defs/artifact_snapshot" },
+    "transformation": { "$ref": "#/$defs/transformation" },
+    "artifact_identity": { "$ref": "#/$defs/artifact_identity" },
+    "correlation": { "$ref": "#/$defs/correlation" },
+    "coverage": { "$ref": "#/$defs/coverage" },
+    "applicability": { "$ref": "#/$defs/applicability" },
+    "preservation": { "$ref": "#/$defs/preservation" },
+    "transitions": { "$ref": "#/$defs/transitions" },
+    "findings": {
+      "type": "array",
+      "items": { "$ref": "#/$defs/finding" }
+    },
+    "limitations": {
+      "type": "array",
+      "items": { "$ref": "#/$defs/limitation" }
+    }
+  },
+  "$defs": {
+    "uint64": {
+      "type": "integer",
+      "minimum": 0,
+      "maximum": 18446744073709551615
+    },
+    "nullable_nonnegative_integer": {
+      "type": ["integer", "null"],
+      "minimum": 0,
+      "maximum": 2147483647
+    },
+    "evidence_state": {
+      "enum": ["no", "yes", "indeterminate"]
+    },
+    "change_kind": {
+      "enum": ["unchanged", "improved", "degraded", "changed", "indeterminate"]
+    },
+    "overall": {
+      "enum": ["VALID", "INVALID", "UNSIGNED", "NOT_VERIFIABLE", "PARTIAL"]
+    },
+    "verification_snapshot": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "media_signing",
+        "signature_integrity",
+        "continuity",
+        "verification_completeness",
+        "certificate_status",
+        "source_authenticity",
+        "public_key_has_changed",
+        "overall"
+      ],
+      "properties": {
+        "media_signing": { "enum": ["not_detected", "detected"] },
+        "signature_integrity": {
+          "enum": ["not_applicable", "not_feasible", "ok", "ok_with_missing_info", "not_ok", "version_mismatch"]
+        },
+        "continuity": { "enum": ["not_applicable", "intact", "missing_info", "broken"] },
+        "verification_completeness": { "enum": ["complete", "incomplete", "not_feasible"] },
+        "certificate_status": {
+          "enum": ["not_provided", "not_feasible", "not_ok", "ok", "feasible_without_trusted"]
+        },
+        "source_authenticity": { "const": "not_established" },
+        "public_key_has_changed": { "type": "boolean" },
+        "overall": { "$ref": "#/$defs/overall" }
+      }
+    },
+    "inspection_snapshot": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["pending_nalus", "pending_frames", "pending_hashable_nalus"],
+      "properties": {
+        "pending_nalus": { "$ref": "#/$defs/uint64" },
+        "pending_frames": { "$ref": "#/$defs/uint64" },
+        "pending_hashable_nalus": { "$ref": "#/$defs/nullable_nonnegative_integer" }
+      }
+    },
+    "artifact_snapshot": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "codec",
+        "byte_size",
+        "sha256",
+        "nal_count",
+        "signing_sei_count",
+        "verification",
+        "inspection"
+      ],
+      "properties": {
+        "codec": { "enum": ["h264", "h265"] },
+        "byte_size": { "$ref": "#/$defs/uint64" },
+        "sha256": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["algorithm", "value"],
+          "properties": {
+            "algorithm": { "const": "sha256" },
+            "value": { "type": "string", "pattern": "^[0-9a-f]{64}$" }
+          }
+        },
+        "nal_count": { "$ref": "#/$defs/uint64" },
+        "signing_sei_count": { "$ref": "#/$defs/uint64" },
+        "verification": { "$ref": "#/$defs/verification_snapshot" },
+        "inspection": { "$ref": "#/$defs/inspection_snapshot" }
+      }
+    },
+    "transformation": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["kind", "label", "pipeline_id", "tool_version", "log_digest", "trust"],
+      "properties": {
+        "kind": {
+          "enum": [
+            "unspecified",
+            "transparent",
+            "remux",
+            "clip",
+            "segment",
+            "concatenate",
+            "transcode",
+            "metadata_change",
+            "timestamp_rewrite",
+            "proprietary_or_unknown"
+          ]
+        },
+        "label": { "type": ["string", "null"] },
+        "pipeline_id": { "type": ["string", "null"] },
+        "tool_version": { "type": ["string", "null"] },
+        "log_digest": { "type": ["string", "null"] },
+        "trust": { "const": "caller_declared_untrusted" }
+      }
+    },
+    "artifact_identity": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["byte_relation"],
+      "properties": {
+        "byte_relation": { "enum": ["identical", "different", "indeterminate"] }
+      }
+    },
+    "role_counts": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["vcl", "sei", "signing_sei", "parameter_set", "other"],
+      "properties": {
+        "vcl": { "$ref": "#/$defs/uint64" },
+        "sei": { "$ref": "#/$defs/uint64" },
+        "signing_sei": { "$ref": "#/$defs/uint64" },
+        "parameter_set": { "$ref": "#/$defs/uint64" },
+        "other": { "$ref": "#/$defs/uint64" }
+      }
+    },
+    "unmatched_summary": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["total_count", "sample_count", "samples_truncated", "roles"],
+      "properties": {
+        "total_count": { "$ref": "#/$defs/uint64" },
+        "sample_count": { "$ref": "#/$defs/uint64" },
+        "samples_truncated": { "type": "boolean" },
+        "roles": { "$ref": "#/$defs/role_counts" }
+      }
+    },
+    "signing_metadata": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "relation",
+        "before_count",
+        "after_count",
+        "matched_payload_count",
+        "missing_from_after_count",
+        "unmatched_after_count",
+        "correlation_complete",
+        "before_classification_complete",
+        "after_classification_complete"
+      ],
+      "properties": {
+        "relation": {
+          "enum": [
+            "equivalent",
+            "retained_for_subset",
+            "partially_retained",
+            "missing_after",
+            "replaced_or_unmatched",
+            "not_applicable",
+            "indeterminate"
+          ]
+        },
+        "before_count": { "$ref": "#/$defs/uint64" },
+        "after_count": { "$ref": "#/$defs/uint64" },
+        "matched_payload_count": { "$ref": "#/$defs/uint64" },
+        "missing_from_after_count": { "$ref": "#/$defs/uint64" },
+        "unmatched_after_count": { "$ref": "#/$defs/uint64" },
+        "correlation_complete": { "$ref": "#/$defs/evidence_state" },
+        "before_classification_complete": { "type": "boolean" },
+        "after_classification_complete": { "type": "boolean" }
+      }
+    },
+    "correlation": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "quality",
+        "stream_relation",
+        "sequence_equivalent",
+        "after_is_ordered_subsequence",
+        "unique_subsequence_alignment",
+        "reordered",
+        "duplicated_after",
+        "normalized_payload_matches",
+        "unique_before_range",
+        "unmatched_before",
+        "unmatched_after",
+        "diagnostic_detail_bounded",
+        "signing_metadata"
+      ],
+      "properties": {
+        "quality": { "enum": ["complete", "ambiguous", "resource_bounded", "incomplete"] },
+        "stream_relation": { "enum": ["equivalent", "ordered_subset", "structurally_changed", "indeterminate"] },
+        "sequence_equivalent": { "$ref": "#/$defs/evidence_state" },
+        "after_is_ordered_subsequence": { "$ref": "#/$defs/evidence_state" },
+        "unique_subsequence_alignment": { "$ref": "#/$defs/evidence_state" },
+        "reordered": { "$ref": "#/$defs/evidence_state" },
+        "duplicated_after": { "$ref": "#/$defs/evidence_state" },
+        "normalized_payload_matches": { "$ref": "#/$defs/uint64" },
+        "unique_before_range": {
+          "oneOf": [
+            { "type": "null" },
+            {
+              "type": "object",
+              "additionalProperties": false,
+              "required": ["start_nal_index", "end_nal_index"],
+              "properties": {
+                "start_nal_index": { "$ref": "#/$defs/uint64" },
+                "end_nal_index": { "$ref": "#/$defs/uint64" }
+              }
+            }
+          ]
+        },
+        "unmatched_before": { "$ref": "#/$defs/unmatched_summary" },
+        "unmatched_after": { "$ref": "#/$defs/unmatched_summary" },
+        "diagnostic_detail_bounded": { "type": "boolean" },
+        "signing_metadata": { "$ref": "#/$defs/signing_metadata" }
+      }
+    },
+    "coverage": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["state"],
+      "properties": { "state": { "enum": ["full", "subset", "unknown"] } }
+    },
+    "applicability": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["media_signing_preservation"],
+      "properties": {
+        "media_signing_preservation": { "enum": ["applicable", "not_applicable", "indeterminate"] }
+      }
+    },
+    "preservation": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["media_signing_evidence"],
+      "properties": {
+        "media_signing_evidence": { "enum": ["preserved", "partially_preserved", "not_preserved", "indeterminate"] }
+      }
+    },
+    "verification_transitions": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "before_overall",
+        "after_overall",
+        "media_signing",
+        "signature_integrity",
+        "continuity",
+        "verification_completeness",
+        "certificate",
+        "public_key_observation"
+      ],
+      "properties": {
+        "before_overall": { "$ref": "#/$defs/overall" },
+        "after_overall": { "$ref": "#/$defs/overall" },
+        "media_signing": { "$ref": "#/$defs/change_kind" },
+        "signature_integrity": { "$ref": "#/$defs/change_kind" },
+        "continuity": { "$ref": "#/$defs/change_kind" },
+        "verification_completeness": { "$ref": "#/$defs/change_kind" },
+        "certificate": { "$ref": "#/$defs/change_kind" },
+        "public_key_observation": { "$ref": "#/$defs/change_kind" }
+      }
+    },
+    "inspection_transitions": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["pending_nalus", "pending_frames", "accumulated_timestamps", "latest_timestamps"],
+      "properties": {
+        "pending_nalus": { "$ref": "#/$defs/change_kind" },
+        "pending_frames": { "$ref": "#/$defs/change_kind" },
+        "accumulated_timestamps": { "$ref": "#/$defs/change_kind" },
+        "latest_timestamps": { "$ref": "#/$defs/change_kind" }
+      }
+    },
+    "transitions": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["verification", "inspection"],
+      "properties": {
+        "verification": { "$ref": "#/$defs/verification_transitions" },
+        "inspection": { "$ref": "#/$defs/inspection_transitions" }
+      }
+    },
+    "finding": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["code", "message"],
+      "properties": {
+        "code": {
+          "enum": [
+            "EXACT_ARTIFACT_MATCH",
+            "NORMALIZED_STREAM_EQUIVALENT",
+            "ORDERED_SUBSET_ESTABLISHED",
+            "SOURCE_COVERAGE_UNKNOWN",
+            "SIGNING_EVIDENCE_RETAINED",
+            "SIGNING_EVIDENCE_PARTIALLY_RETAINED",
+            "SIGNING_EVIDENCE_MISSING",
+            "SIGNING_EVIDENCE_UNMATCHED",
+            "SIGNING_CONTEXT_INCOMPLETE",
+            "CORRELATION_AMBIGUOUS",
+            "CORRELATION_RESOURCE_BOUNDED",
+            "VERIFICATION_DEGRADED",
+            "PRESERVATION_NOT_APPLICABLE"
+          ]
+        },
+        "message": { "type": "string" }
+      }
+    },
+    "limitation": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["code", "message"],
+      "properties": {
+        "code": {
+          "enum": [
+            "SOURCE_AUTHENTICITY_NOT_ESTABLISHED",
+            "VMS_TRUST_NOT_ESTABLISHED",
+            "SUPPLIED_BEFORE_COMPLETENESS_NOT_ESTABLISHED",
+            "CHAIN_OF_CUSTODY_NOT_ESTABLISHED",
+            "TRANSFORMATION_CONTEXT_UNTRUSTED",
+            "SUBSET_DOES_NOT_ESTABLISH_FULL_EXPORT"
+          ]
+        },
+        "message": { "type": "string" }
+      }
+    }
+  }
+}
