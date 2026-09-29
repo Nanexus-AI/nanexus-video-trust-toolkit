@@ -10,8 +10,83 @@ The formal schema is
 [`schemas/media-signing-preservation-assessment-0.1.json`](schemas/media-signing-preservation-assessment-0.1.json)
 and uses JSON Schema Draft 2020-12.
 
-There is no public preservation CLI in this slice. Library consumers render an
-already-derived `PreservationAssessment` with `RenderPreservationJson`.
+The dedicated CLI task is `compare-preservation`:
+
+```bash
+video-trust compare-preservation --codec h264 \
+  --before-ca source-ca.pem --after-ca export-ca.pem \
+  before.h264 after.h264
+```
+
+Human-readable output is the default. Pass `--json` to emit exactly this
+machine-readable contract:
+
+```bash
+video-trust compare-preservation --codec h265 --json before.h265 after.h265
+```
+
+The command name describes a before/after preservation comparison and remains
+distinct from single-artifact `verify` and `inspect`. It does not imply that the
+command preserves media or establishes provenance/custody.
+
+## CLI arguments
+
+```text
+video-trust compare-preservation --codec h264|h265
+  [--before-ca PATH]
+  [--after-ca PATH]
+  [--transformation CLASS]
+  [--pipeline-id TEXT]
+  [--json]
+  <before.es> <after.es>
+```
+
+Both positional inputs are finite Annex-B elementary streams of the explicitly
+selected codec. Containers, RTSP URLs, and arbitrary transformation pipelines
+are not accepted. Each CA option configures only its corresponding validation
+session and may be omitted.
+
+`--transformation` accepts `transparent`, `remux`, `clip`, `segment`,
+`concatenate`, `transcode`, `metadata-change`, `timestamp-rewrite`, or
+`proprietary-or-unknown`. It and `--pipeline-id` are optional caller-declared,
+untrusted context. They never alter correlation or preservation derivation.
+
+The command inspects before once, inspects after once, correlates the artifacts
+once, and derives the existing preservation domain assessment. Human and JSON
+modes execute the same pipeline.
+
+## Human output
+
+The default report has stable sections for before, after, untrusted
+transformation context, artifact/stream relationship, Media Signing
+preservation, verification and inspection transitions, findings, and
+limitations. Byte relation, source coverage, applicability, and preservation
+are printed as separate fields. A preserved subset therefore reports both
+`Source coverage: subset` and `Preservation: preserved`, plus the limitation
+that full export was not established.
+
+Successful human output contains only the report on stdout. Successful JSON
+output contains only the schema 0.1 document on stdout. Execution errors use
+stderr.
+
+## Comparison exit codes
+
+Exit codes describe the comparison task and are intentionally distinct from the
+single-artifact verify policy:
+
+| Code | Meaning |
+| --- | --- |
+| `0` | Applicable Media Signing evidence is `preserved`. |
+| `1` | Completed applicable assessment is `partially_preserved` or `not_preserved`. |
+| `2` | CLI usage, input, path, or parse error. |
+| `3` | Runtime, upstream, or internal execution failure. |
+| `4` | Completed assessment has an `indeterminate` result, or preservation is `not_applicable`/applicability is indeterminate. |
+
+Unsigned-before media is a completed assessment with applicability
+`not_applicable`, aggregate `indeterminate`, and exit `4`; it is not rejected as
+bad input. Ambiguous or resource-bounded correlation likewise yields a completed
+domain result and exit `4`. Human and JSON modes return the same exit code for
+the same artifacts and options.
 
 ## Identity and lifecycle
 

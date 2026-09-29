@@ -1,3 +1,4 @@
+#include "videotrust/compare.hpp"
 #include "videotrust/error.hpp"
 #include "videotrust/render.hpp"
 #include "videotrust/result.hpp"
@@ -22,6 +23,10 @@ void Usage(std::ostream& out) {
       << "Usage:\n"
       << "  video-trust verify --codec h264|h265 [--ca PATH] [--json] <input.es>\n"
       << "  video-trust inspect --codec h264|h265 [--ca PATH] [--json] <input.es>\n"
+      << "  video-trust compare-preservation --codec h264|h265\n"
+      << "                   [--before-ca PATH] [--after-ca PATH] [--json]\n"
+      << "                   [--transformation CLASS] [--pipeline-id TEXT]\n"
+      << "                   <before.es> <after.es>\n"
       << "  video-trust sign --codec h264|h265 --key KEY.pem --cert CHAIN.pem\n"
       << "                   -o OUTPUT.es [--force] [--quiet] <input.es>\n"
       << "  video-trust tamper --codec h264|h265 --operation OP -o OUTPUT.es\n"
@@ -35,6 +40,8 @@ void Usage(std::ostream& out) {
       << "\n"
       << "verify exit codes: 0 positive, 1 integrity fail, 2 usage/input, 3 runtime,\n"
       << "                  4 unsigned/incomplete/not verifiable\n"
+      << "compare exit:     0 preserved, 1 partial/not preserved, 2 usage/input,\n"
+      << "                  3 runtime, 4 indeterminate/not applicable\n"
       << "sign/tamper exit:  0 success, 2 usage/input/path, 3 runtime\n";
 }
 
@@ -73,6 +80,28 @@ bool ParseOperation(std::string_view v, videotrust::TamperOperation& out, std::s
   return false;
 }
 
+bool ParseTransformation(std::string_view value,
+                         videotrust::TransformationKind& out,
+                         std::string& err) {
+  using videotrust::TransformationKind;
+  if (value == "transparent") out = TransformationKind::Transparent;
+  else if (value == "remux") out = TransformationKind::Remux;
+  else if (value == "clip") out = TransformationKind::Clip;
+  else if (value == "segment") out = TransformationKind::Segment;
+  else if (value == "concatenate") out = TransformationKind::Concatenate;
+  else if (value == "transcode") out = TransformationKind::Transcode;
+  else if (value == "metadata-change") out = TransformationKind::MetadataChange;
+  else if (value == "timestamp-rewrite") out = TransformationKind::TimestampRewrite;
+  else if (value == "proprietary-or-unknown") {
+    out = TransformationKind::ProprietaryOrUnknown;
+  } else {
+    err = "unsupported transformation (transparent|remux|clip|segment|concatenate|"
+          "transcode|metadata-change|timestamp-rewrite|proprietary-or-unknown)";
+    return false;
+  }
+  return true;
+}
+
 struct VerifyArgs {
   bool json{false};
   CommonCodec codec;
@@ -100,6 +129,16 @@ struct TamperArgs {
   bool quiet{false};
   std::size_t truncate_count{1};
   bool truncate_count_set{false};
+};
+
+struct CompareArgs {
+  bool json{false};
+  CommonCodec codec;
+  std::string before_ca;
+  std::string after_ca;
+  std::string before;
+  std::string after;
+  videotrust::TransformationContext transformation;
 };
 
 bool ParseVerifyArgs(int argc, char** argv, VerifyArgs& out, std::string& err) {
@@ -147,6 +186,66 @@ bool ParseVerifyArgs(int argc, char** argv, VerifyArgs& out, std::string& err) {
 
 bool ParseInspectArgs(int argc, char** argv, VerifyArgs& out, std::string& err) {
   return ParseVerifyArgs(argc, argv, out, err);
+}
+
+bool ParseCompareArgs(int argc, char** argv, CompareArgs& out, std::string& err) {
+  std::vector<std::string> positionals;
+  for (int i = 2; i < argc; ++i) {
+    const std::string_view argument(argv[i]);
+    if (argument == "--json") {
+      out.json = true;
+    } else if (argument == "--codec") {
+      if (i + 1 >= argc) {
+        err = "--codec requires a value";
+        return false;
+      }
+      if (!ParseCodecValue(argv[++i], out.codec.codec, err)) return false;
+      out.codec.set = true;
+    } else if (argument == "--before-ca") {
+      if (i + 1 >= argc) {
+        err = "--before-ca requires a path";
+        return false;
+      }
+      out.before_ca = argv[++i];
+    } else if (argument == "--after-ca") {
+      if (i + 1 >= argc) {
+        err = "--after-ca requires a path";
+        return false;
+      }
+      out.after_ca = argv[++i];
+    } else if (argument == "--transformation") {
+      if (i + 1 >= argc) {
+        err = "--transformation requires a value";
+        return false;
+      }
+      if (!ParseTransformation(argv[++i], out.transformation.kind, err)) return false;
+    } else if (argument == "--pipeline-id") {
+      if (i + 1 >= argc) {
+        err = "--pipeline-id requires a value";
+        return false;
+      }
+      out.transformation.pipeline_id = argv[++i];
+    } else if (argument == "-h" || argument == "--help") {
+      Usage(std::cout);
+      std::exit(0);
+    } else if (argument.starts_with('-')) {
+      err = "unknown option: " + std::string(argument);
+      return false;
+    } else {
+      positionals.emplace_back(argument);
+    }
+  }
+  if (!out.codec.set) {
+    err = "required --codec h264|h265";
+    return false;
+  }
+  if (positionals.size() != 2) {
+    err = "exactly two input paths are required: before and after";
+    return false;
+  }
+  out.before = positionals[0];
+  out.after = positionals[1];
+  return true;
 }
 
 bool ParseSignArgs(int argc, char** argv, SignArgs& out, std::string& err) {
@@ -363,6 +462,37 @@ int RunInspect(const VerifyArgs& args) {
       videotrust::ExitCodeForVerification(result.value().verification));
 }
 
+int RunCompare(const CompareArgs& args) {
+  videotrust::PreservationCompareOptions options;
+  options.codec = args.codec.codec;
+  options.before_path = args.before;
+  options.after_path = args.after;
+  options.before_ca_pem_path = args.before_ca;
+  options.after_ca_pem_path = args.after_ca;
+  options.transformation = args.transformation;
+
+  auto result = videotrust::ComparePreservation(options);
+  if (!result.ok()) {
+    const auto& error = result.error();
+    std::cerr << "error: " << error.message << "\n";
+    using videotrust::ErrorCode;
+    if (error.code == ErrorCode::ParseError ||
+        error.code == ErrorCode::InvalidArgument ||
+        (error.code == ErrorCode::IoFailure &&
+         error.message.find("cannot open") != std::string::npos)) {
+      return static_cast<int>(videotrust::ExitCode::UsageOrInputError);
+    }
+    return static_cast<int>(videotrust::ExitCode::RuntimeFailure);
+  }
+
+  if (args.json) {
+    std::cout << videotrust::RenderPreservationJson(result.value());
+  } else {
+    std::cout << videotrust::RenderPreservationText(result.value());
+  }
+  return static_cast<int>(videotrust::ExitCodeForPreservation(result.value()));
+}
+
 int RunSign(const SignArgs& args) {
   videotrust::SignOptions opt;
   opt.codec = args.codec.codec;
@@ -452,6 +582,15 @@ int main(int argc, char** argv) {
     }
     return RunInspect(args);
   }
+  if (cmd == "compare-preservation") {
+    CompareArgs args;
+    if (!ParseCompareArgs(argc, argv, args, err)) {
+      std::cerr << "error: " << err << "\n";
+      Usage(std::cerr);
+      return static_cast<int>(videotrust::ExitCode::UsageOrInputError);
+    }
+    return RunCompare(args);
+  }
   if (cmd == "sign") {
     SignArgs args;
     if (!ParseSignArgs(argc, argv, args, err)) {
@@ -471,7 +610,8 @@ int main(int argc, char** argv) {
     return RunTamper(args);
   }
 
-  std::cerr << "error: unknown subcommand (use verify, inspect, sign, or tamper)\n";
+  std::cerr << "error: unknown subcommand (use verify, inspect, compare-preservation, "
+               "sign, or tamper)\n";
   Usage(std::cerr);
   return static_cast<int>(videotrust::ExitCode::UsageOrInputError);
 }

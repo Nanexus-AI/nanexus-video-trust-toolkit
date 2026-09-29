@@ -331,6 +331,23 @@ PreservationAssessment DerivePreservationAssessment(
   return out;
 }
 
+ExitCode ExitCodeForPreservation(
+    const PreservationAssessment& assessment) noexcept {
+  if (assessment.applicability != PreservationApplicability::Applicable) {
+    return ExitCode::UnsignedOrNotVerifiable;
+  }
+  switch (assessment.media_signing_preservation) {
+    case MediaSigningPreservation::Preserved:
+      return ExitCode::Success;
+    case MediaSigningPreservation::PartiallyPreserved:
+    case MediaSigningPreservation::NotPreserved:
+      return ExitCode::VerificationNegative;
+    case MediaSigningPreservation::Indeterminate:
+      return ExitCode::UnsignedOrNotVerifiable;
+  }
+  return ExitCode::UnsignedOrNotVerifiable;
+}
+
 const char* ToString(ArtifactRelation value) noexcept {
   switch (value) {
     case ArtifactRelation::Identical: return "identical";

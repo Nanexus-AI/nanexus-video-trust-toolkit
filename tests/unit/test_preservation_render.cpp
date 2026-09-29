@@ -177,6 +177,111 @@ int main(int argc, char** argv) {
     return Fail("transformation context changed domain semantics");
   }
 
+  struct ExitCase {
+    PreservationApplicability applicability;
+    MediaSigningPreservation preservation;
+    ExitCode expected;
+  };
+  const ExitCase exit_cases[] = {
+      {PreservationApplicability::Applicable,
+       MediaSigningPreservation::Preserved, ExitCode::Success},
+      {PreservationApplicability::Applicable,
+       MediaSigningPreservation::PartiallyPreserved,
+       ExitCode::VerificationNegative},
+      {PreservationApplicability::Applicable,
+       MediaSigningPreservation::NotPreserved,
+       ExitCode::VerificationNegative},
+      {PreservationApplicability::Applicable,
+       MediaSigningPreservation::Indeterminate,
+       ExitCode::UnsignedOrNotVerifiable},
+      {PreservationApplicability::NotApplicable,
+       MediaSigningPreservation::Preserved,
+       ExitCode::UnsignedOrNotVerifiable},
+      {PreservationApplicability::NotApplicable,
+       MediaSigningPreservation::PartiallyPreserved,
+       ExitCode::UnsignedOrNotVerifiable},
+      {PreservationApplicability::NotApplicable,
+       MediaSigningPreservation::NotPreserved,
+       ExitCode::UnsignedOrNotVerifiable},
+      {PreservationApplicability::NotApplicable,
+       MediaSigningPreservation::Indeterminate,
+       ExitCode::UnsignedOrNotVerifiable},
+      {PreservationApplicability::Indeterminate,
+       MediaSigningPreservation::Preserved,
+       ExitCode::UnsignedOrNotVerifiable},
+      {PreservationApplicability::Indeterminate,
+       MediaSigningPreservation::PartiallyPreserved,
+       ExitCode::UnsignedOrNotVerifiable},
+      {PreservationApplicability::Indeterminate,
+       MediaSigningPreservation::NotPreserved,
+       ExitCode::UnsignedOrNotVerifiable},
+      {PreservationApplicability::Indeterminate,
+       MediaSigningPreservation::Indeterminate,
+       ExitCode::UnsignedOrNotVerifiable},
+  };
+  for (const auto& test : exit_cases) {
+    PreservationAssessment exit_assessment;
+    exit_assessment.applicability = test.applicability;
+    exit_assessment.media_signing_preservation = test.preservation;
+    if (ExitCodeForPreservation(exit_assessment) != test.expected) {
+      return Fail("preservation exit policy combination");
+    }
+  }
+
+  const auto exact_assessment = MakeAssessment("exact");
+  const std::string text = RenderPreservationText(exact_assessment);
+  const std::string repeated_text = RenderPreservationText(exact_assessment);
+  const std::string sections[] = {
+      "Nanexus Media Signing Preservation Assessment\n",
+      "Before\n",
+      "After\n",
+      "Transformation Context (caller-declared, untrusted)\n",
+      "Artifact and Stream Relationship\n",
+      "Media Signing Preservation\n",
+      "Verification Transitions\n",
+      "Inspection Transitions\n",
+      "Findings\n",
+      "Limitations\n",
+  };
+  std::size_t position = 0;
+  for (const auto& section : sections) {
+    const std::size_t found = text.find(section, position);
+    if (found == std::string::npos) return Fail("human report section order");
+    position = found + section.size();
+  }
+  if (text != repeated_text || text.find("/home/") != std::string::npos ||
+      text.find("Overall: AUTHENTIC") != std::string::npos ||
+      text.find("VMS trusted") != std::string::npos ||
+      text.find("Source coverage: full") == std::string::npos ||
+      text.find("Applicability: applicable") == std::string::npos ||
+      text.find("Preservation: preserved") == std::string::npos ||
+      text.find("Byte identity and source coverage are separate from preservation.") ==
+          std::string::npos) {
+    return Fail("human report determinism or trust separation");
+  }
+
+  const std::string subset_text =
+      RenderPreservationText(MakeAssessment("subset"));
+  if (subset_text.find("Source coverage: subset") == std::string::npos ||
+      subset_text.find("Preservation: preserved") == std::string::npos ||
+      subset_text.find("SUBSET_DOES_NOT_ESTABLISH_FULL_EXPORT") ==
+          std::string::npos) {
+    return Fail("preserved subset human report");
+  }
+
+  if (ExitCodeForPreservation(MakeAssessment("ambiguous")) !=
+          ExitCode::UnsignedOrNotVerifiable ||
+      ExitCodeForPreservation(MakeAssessment("bounded")) !=
+          ExitCode::UnsignedOrNotVerifiable ||
+      ExitCodeForPreservation(MakeAssessment("unsigned")) !=
+          ExitCode::UnsignedOrNotVerifiable ||
+      ExitCodeForPreservation(MakeAssessment("partial")) !=
+          ExitCode::VerificationNegative ||
+      ExitCodeForPreservation(MakeAssessment("not_preserved")) !=
+          ExitCode::VerificationNegative) {
+    return Fail("representative preservation exits");
+  }
+
   if (argc == 3 && std::string(argv[1]) == "--json") {
     std::cout << json;
     return 0;

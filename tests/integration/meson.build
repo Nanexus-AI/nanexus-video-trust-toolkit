@@ -42,6 +42,8 @@ test_preservation_fixtures = executable(
 python = import('python').find_installation('python3')
 inspect_test_script = meson.project_source_root() / 'tests/integration/test_inspect_cli.py'
 inspection_schema = meson.project_source_root() / 'docs/schemas/media-signing-inspection-0.1.json'
+preservation_schema = meson.project_source_root() / 'docs/schemas/media-signing-preservation-assessment-0.1.json'
+compare_test_script = meson.project_source_root() / 'tests/integration/test_compare_cli.py'
 
 verify_runner = find_program('bash')
 
@@ -177,6 +179,25 @@ test(
     + '"' + fixture_dir + '"',
   ],
   depends: [video_trust, oms_sign_annexb, test_preservation_fixtures],
+  timeout: 180,
+  is_parallel: false,
+)
+
+test(
+  'compare_preservation_cli_integration',
+  verify_runner,
+  args: [
+    '-lc',
+    'set -euo pipefail; '
+    + 'OMS_SIGN_ANNEXB="' + oms_sign_annexb.full_path() + '" '
+    + '"' + gen_script + '" "' + fixture_dir + '"; '
+    + 'PYTHONPATH=/usr/lib/python3/dist-packages '
+    + '"' + python.full_path() + '" "' + compare_test_script + '" '
+    + '"' + video_trust.full_path() + '" '
+    + '"' + fixture_dir + '" '
+    + '"' + preservation_schema + '"',
+  ],
+  depends: [video_trust, oms_sign_annexb],
   timeout: 180,
   is_parallel: false,
 )

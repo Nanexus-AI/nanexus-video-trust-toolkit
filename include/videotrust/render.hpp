@@ -13,5 +13,6 @@ std::string RenderJson(const VerificationResult& result);
 std::string RenderInspectionText(const InspectionResult& result);
 std::string RenderInspectionJson(const InspectionResult& result);
 std::string RenderPreservationJson(const PreservationAssessment& assessment);
+std::string RenderPreservationText(const PreservationAssessment& assessment);
 
 }  // namespace videotrust

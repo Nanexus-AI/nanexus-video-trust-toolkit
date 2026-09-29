@@ -124,6 +124,27 @@ void RenderUnmatchedSummary(std::ostringstream& o,
   o << "}";
 }
 
+void RenderPreservationArtifactText(std::ostringstream& o,
+                                    const char* heading,
+                                    const ArtifactEvidence& artifact,
+                                    const InspectionResult& inspection) {
+  o << heading << "\n";
+  o << "  Codec: " << ToString(inspection.verification.codec) << "\n";
+  o << "  Size (bytes): " << artifact.byte_size << "\n";
+  o << "  SHA-256: " << artifact.sha256 << "\n";
+  o << "  NAL units: " << artifact.nal_count << "\n";
+  o << "  Signing SEIs: " << artifact.signing_sei_count << "\n";
+  o << "  Overall verification: "
+    << ToString(DeriveOverallState(inspection.verification)) << "\n";
+  o << "  Signature integrity: "
+    << ToString(inspection.verification.signature_integrity) << "\n";
+  o << "  Continuity: " << ToString(inspection.verification.continuity) << "\n";
+  o << "  Verification completeness: "
+    << ToString(inspection.verification.completeness) << "\n";
+  o << "  Pending NALs: " << inspection.accumulated.pending_nalus << "\n";
+  o << "  Pending frames: " << inspection.accumulated.pending_frames << "\n";
+}
+
 }  // namespace
 
 std::string RenderText(const VerificationResult& result) {
@@ -435,6 +456,78 @@ std::string RenderPreservationJson(const PreservationAssessment& assessment) {
       << "\"}";
   }
   o << "]}\n";
+  return o.str();
+}
+
+std::string RenderPreservationText(const PreservationAssessment& assessment) {
+  std::ostringstream o;
+  o << "Nanexus Media Signing Preservation Assessment\n";
+  RenderPreservationArtifactText(o, "Before", assessment.correlation.before,
+                                 assessment.before);
+  RenderPreservationArtifactText(o, "After", assessment.correlation.after,
+                                 assessment.after);
+
+  o << "Transformation Context (caller-declared, untrusted)\n";
+  o << "  Kind: " << ToString(assessment.transformation.kind) << "\n";
+  o << "  Pipeline ID: ";
+  RenderOptionalText(o, assessment.transformation.pipeline_id);
+  o << "\n";
+
+  o << "Artifact and Stream Relationship\n";
+  o << "  Byte relation: " << ToString(assessment.artifact_relation) << "\n";
+  o << "  Stream relation: " << ToString(assessment.stream_relation) << "\n";
+  o << "  Correlation quality: " << ToString(assessment.correlation_quality)
+    << "\n";
+  o << "  Source coverage: " << ToString(assessment.source_coverage) << "\n";
+  o << "  Byte identity and source coverage are separate from preservation.\n";
+
+  o << "Media Signing Preservation\n";
+  o << "  Applicability: " << ToString(assessment.applicability) << "\n";
+  o << "  Preservation: "
+    << ToString(assessment.media_signing_preservation) << "\n";
+  o << "  Signing metadata relation: "
+    << ToString(assessment.signing_metadata_relation) << "\n";
+
+  const auto& verification = assessment.verification_transitions;
+  const auto& inspection = assessment.inspection_transitions;
+  o << "Verification Transitions\n";
+  o << "  Overall: " << ToString(verification.before_overall) << " -> "
+    << ToString(verification.after_overall) << "\n";
+  o << "  Media Signing: " << ToString(verification.media_signing) << "\n";
+  o << "  Signature integrity: " << ToString(verification.signature_integrity)
+    << "\n";
+  o << "  Continuity: " << ToString(verification.continuity) << "\n";
+  o << "  Verification completeness: " << ToString(verification.completeness)
+    << "\n";
+  o << "  Certificate: " << ToString(verification.certificate) << "\n";
+  o << "  Public-key observation: "
+    << ToString(verification.public_key_observation) << "\n";
+
+  o << "Inspection Transitions\n";
+  o << "  Pending NALs: " << ToString(inspection.pending_nalus) << "\n";
+  o << "  Pending frames: " << ToString(inspection.pending_frames) << "\n";
+  o << "  Accumulated timestamps: "
+    << ToString(inspection.accumulated_timestamps) << "\n";
+  o << "  Latest timestamps: " << ToString(inspection.latest_timestamps) << "\n";
+
+  o << "Findings\n";
+  if (assessment.findings.empty()) {
+    o << "  (none)\n";
+  } else {
+    for (const auto& finding : assessment.findings) {
+      o << "  - [" << ToString(finding.code) << "] " << finding.message << "\n";
+    }
+  }
+
+  o << "Limitations\n";
+  if (assessment.limitations.empty()) {
+    o << "  (none)\n";
+  } else {
+    for (const auto& limitation : assessment.limitations) {
+      o << "  - [" << ToString(limitation.code) << "] " << limitation.message
+        << "\n";
+    }
+  }
   return o.str();
 }
 

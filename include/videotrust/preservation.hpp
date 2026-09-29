@@ -147,6 +147,12 @@ PreservationAssessment DerivePreservationAssessment(
     const MediaCorrelationEvidence& correlation,
     const TransformationContext& transformation = {});
 
+/// M3 comparison-task exit policy: 0 preserved; 1 partial/not preserved;
+/// 4 indeterminate or not applicable. Usage/runtime errors are mapped by the
+/// caller to the existing 2/3 process codes.
+ExitCode ExitCodeForPreservation(
+    const PreservationAssessment& assessment) noexcept;
+
 const char* ToString(ArtifactRelation value) noexcept;
 const char* ToString(StreamRelation value) noexcept;
 const char* ToString(SourceCoverage value) noexcept;
