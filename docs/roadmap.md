@@ -7,8 +7,8 @@ High-level milestone picture for Nanexus Video Trust Toolkit.
 **Current published developer release:** **M1 / `v0.1.0`** (Pre-release).
 
 M1.5 and M2 are implemented in current `main` development history. M3 is
-implemented in unpublished local history and awaits human publication approval.
-None is part of the `v0.1.0` tag or implies that a later release exists.
+complete and published on current `main`. None is part of the `v0.1.0` tag or
+implies that a later release exists.
 
 This is an independent open-source project using the ONVIF Media Signing
 framework/standard. It is **not** an official ONVIF project.
@@ -19,7 +19,7 @@ framework/standard. It is **not** an official ONVIF project.
 | **M1** | File-Based Reference Lab | **Complete** — `v0.1.0` released (Pre-release) |
 | **M1.5** | Experimental Agent interface | **Implemented on `main`** — not a stable API or a tagged release |
 | **M2** | Inspect + Report | **Implemented on current `main`** — unreleased; not a tagged release |
-| **M3** | VMS/NVR Preservation Testing | **Implemented locally** — validation complete; publication approval pending |
+| **M3** | VMS/NVR Preservation Testing | **Complete and published on current `main`** — not a tagged release |
 | **M4** | Passive Live RTSP Verification | Planned |
 | **M5** | ARM64 / Edge Deployment | Planned |
 | **M6** | Integration Layer | Planned |
@@ -76,7 +76,7 @@ The M1 verify JSON contract remains at version `0.1`.
 M2 inspection is available through the CLI/domain surface, not a separate MCP
 tool. Publication review and any future tag or release remain separate steps.
 
-## M3 — VMS/NVR Preservation Testing (implemented locally)
+## M3 — VMS/NVR Preservation Testing (complete on current `main`)
 
 Adds bounded H.264/H.265 artifact correlation, an independent preservation
 domain and closed JSON Schema `0.1`, `video-trust compare-preservation`, and a
@@ -92,7 +92,7 @@ contracts. M3 does not add live RTSP verification; that remains M4 work.
 
 ## Later milestones (summary)
 
-* **M3** — finite stored/exported-media preservation assessment (implemented locally)
+* **M3** — finite stored/exported-media preservation assessment (complete on current `main`)
 * **M4** — passive live RTSP verification
 * **M5** — ARM64 / edge deployment (e.g. RK3588 / Jetson class targets)
 * **M6** — integration layer for adjacent systems

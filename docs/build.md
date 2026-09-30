@@ -2,7 +2,8 @@
 
 Experimental / pre-release developer reference lab. The `v0.1.0` release
 contains Annex-B `verify` / `sign` / `tamper` for H.264 and H.265; current
-`main` also contains `inspect` and is not a new tagged release.
+`main` also contains `inspect` and `compare-preservation` and is not a new
+tagged release.
 
 ## Supported platform
 
@@ -20,7 +21,8 @@ sudo apt-get install -y build-essential pkg-config meson ninja-build \
 
 * **ffmpeg** is used by test fixture generation (not required to run a
   pre-built `video-trust` binary against your own Annex-B files).
-* **python3-jsonschema** is used by the inspection JSON Schema contract tests.
+* **python3-jsonschema** is used by the inspection and preservation JSON Schema
+  contract tests.
   It is a test/development dependency and is not required to run a pre-built
   `video-trust` binary against media.
 * **OpenSSL 3.x** via `libssl-dev` / `pkg-config openssl`.
@@ -74,4 +76,5 @@ uses a separate `schema_version` of `"0.1"` — that is not the product SemVer.
 * [`m1-contracts.md`](m1-contracts.md) — exit codes and trust semantics
 * [`json-v0.1.md`](json-v0.1.md) — JSON contract
 * [`inspection-v0.1.md`](inspection-v0.1.md) — inspection text/JSON contract
+* [`preservation-v0.1.md`](preservation-v0.1.md) — preservation text/JSON contract
 * [`fixtures.md`](fixtures.md) — test media provenance

@@ -69,8 +69,9 @@ The Nanexus layer must use the official Media Signing implementation for:
   [`inspection-v0.1.md`](inspection-v0.1.md).
 * **M3** — finite-file correlation and preservation assessment, synthetic
   H.264/H.265 transformation matrix, configuration-scoped VMS/NVR field
-  characterization, and L1 `video_trust.compare_preservation`. **Implemented
-  locally; publication approval pending.** It does not add M4 live RTSP behavior.
+  characterization, and L1 `video_trust.compare_preservation`. **Complete and
+  published on current `main`; not a tagged release.** It does not add M4 live
+  RTSP behavior.
 
 See [`roadmap.md`](roadmap.md). This project is independent open-source work that
 uses the ONVIF Media Signing framework; it is not an official ONVIF project.

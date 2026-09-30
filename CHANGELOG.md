@@ -16,9 +16,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   `docs/schemas/media-signing-inspection-0.1.json`
 - Typed accumulated/latest validation counts, raw FILETIME-style timestamps,
   and optional vendor observations, without changing M1 verification axes
+- M3 bounded H.264/H.265 preservation correlation, assessment contract and
+  schema `0.1`, comparison CLI, synthetic transformation matrix, and scoped
+  Frigate case study
 - Experimental Agent interface on `main` (not a release tag): Python capability
-  layer, read-only MCP stdio tools `video_trust.verify_file` and
-  `video_trust.assess_video_integrity`, and an evaluation harness
+  layer, read-only MCP stdio tools `video_trust.verify_file`,
+  `video_trust.assess_video_integrity`, and
+  `video_trust.compare_preservation`, plus an evaluation harness
 - Public docs: `docs/agent-interface.md`, architecture and roadmap notes for M1.5
 - Continuous integration runs the Python Agent test suite without live model credentials
 
@@ -27,8 +31,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Product version remains `0.1.0`. Core JSON schema, Agent contract, and
   capability versions remain `0.1`. The separate inspection JSON schema also
   begins at `0.1`. Evaluation suite/scorer is `0.2`.
-- M2 inspection is CLI/domain-facing only. The Agent/MCP tool catalog remains
-  `video_trust.verify_file` and `video_trust.assess_video_integrity`.
+- M2 inspection remains CLI/domain-facing only. M3 adds the deterministic
+  read-only preservation comparison tool without exposing inspection as a
+  separate Agent/MCP capability.
 - Post-`v0.1.0` development continues here after the first developer release.
 
 ## [0.1.0] — 2026-09-27

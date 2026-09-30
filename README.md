@@ -30,17 +30,17 @@ M0 Feasibility:              Complete
 M1 File-based reference lab: Complete — v0.1.0 first developer release
 M1.5 Agent interface:        Experimental, on main (not a stable API)
 M2 Inspect + Report:         Implemented on current main (not a tagged release)
-M3 VMS/NVR preservation:    Implemented locally; awaiting publication approval
+M3 VMS/NVR preservation:    Complete — published on current main (not a tagged release)
 M4 and later:               Planned
 Stable production release:   None
 ```
 
 `v0.1.0` is the first usable **developer** release of the file-based lab
 (GitHub Pre-release). Product version metadata is `0.1.0`. M1.5 adds an
-experimental Agent interface, and current local `main` adds M2 inspection and
-M3 preservation assessment. The unpublished M3 work is awaiting human review.
-These post-release changes are not part of `v0.1.0`, do not create a new tagged
-release, and do not make the Agent interface a stable public API.
+experimental Agent interface, and current `main` adds M2 inspection and M3
+preservation assessment. These post-release changes are not part of `v0.1.0`,
+do not create a new tagged release, and do not make the Agent interface a
+stable public API.
 
 Version labels are separate: product `v0.1.0`, verify JSON schema `0.1`,
 inspection JSON schema `0.1`, Agent contract `0.1`, capability `0.1`, and
@@ -226,10 +226,10 @@ repository. See [`docs/architecture.md`](docs/architecture.md).
 
 ## Roadmap
 
-`v0.1.0` is the published file-based reference lab. Current local `main` also
-contains the experimental M1.5 Agent interface, M2 inspect/report work, and
-unpublished M3 preservation work; none is a new tagged release. Later milestones
-continue with passive RTSP, edge, and integration work. Each milestone also reviews whether a
+`v0.1.0` is the published file-based reference lab. Current `main` also contains
+the experimental M1.5 Agent interface, M2 inspect/report work, and completed M3
+preservation work; none is a new tagged release. Later milestones continue with
+passive RTSP, edge, and integration work. Each milestone also reviews whether a
 new domain capability should appear to an Agent; M2 did not add Agent exposure,
 while M3 adds the preservation comparison primitive.
 
