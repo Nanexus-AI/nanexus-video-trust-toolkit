@@ -23,12 +23,13 @@ Verification / domain mapping
             └────────► InspectionResult ────► inspect text / JSON 0.1
                                              (CLI/domain only)
 
-Agent path (verification contract only):
-VerificationResult ──► Python CoreClient
+Agent path (typed read-only contracts):
+VerificationResult / PreservationAssessment ──► Python CoreClient
             │
             ▼
 Agent capability layer
   L1  video_trust.verify_file
+  L1  video_trust.compare_preservation
   L2  video_trust.assess_video_integrity
             │
             ▼
@@ -66,6 +67,9 @@ The Nanexus layer must use the official Media Signing implementation for:
   in the `v0.1.0` release.** It adds richer observations, not a stronger trust
   verdict, and is not exposed as a separate Agent/MCP capability. See
   [`inspection-v0.1.md`](inspection-v0.1.md).
+* **M3 (active)** — adds L1 `video_trust.compare_preservation`, a read-only
+  binding to the frozen preservation assessment `0.1`; broader M3 closure is
+  not implied.
 
 See [`roadmap.md`](roadmap.md). This project is independent open-source work that
 uses the ONVIF Media Signing framework; it is not an official ONVIF project.
@@ -82,6 +86,7 @@ uv run --python 3.12 python -m nanexus_video_trust_agent.mcp_server
 ```
 
 `NANEXUS_ALLOWED_ROOTS` is `os.pathsep`-separated. Empty roots refuse startup.
-Optional `NANEXUS_VERIFY_TIMEOUT` is seconds, at most 300. The server exposes only
-`video_trust.verify_file` and `video_trust.assess_video_integrity`. It does not
-sign or modify files, and a verification result does not establish source authenticity.
+Optional `NANEXUS_VERIFY_TIMEOUT` is seconds, at most 300. The server exposes
+`video_trust.verify_file`, `video_trust.compare_preservation`, and
+`video_trust.assess_video_integrity`. It does not sign or modify files, and its
+results do not establish source authenticity.

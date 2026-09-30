@@ -3,9 +3,10 @@
 Experimental software on `main`. Not a stable API, not a tagged release,
 and not a general-purpose Agent.
 
-The C++ `video-trust` core verifies Annex-B H.264/H.265. This Python layer
-turns one `verify --json` execution into a typed capability result and can
-expose that result over MCP stdio. It does not reimplement Media Signing.
+The C++ `video-trust` core verifies and compares Annex-B H.264/H.265. This
+Python layer exposes typed results from `verify --json` and
+`compare-preservation --json` over MCP stdio. It does not reimplement Media
+Signing or preservation semantics.
 
 An external runtime owns planning, conversation, memory, and orchestration.
 This repository owns the domain capability, the contract, the evidence, the
@@ -26,15 +27,16 @@ supported by these docs.
 | Level | Tool | Role in M1.5 |
 | --- | --- | --- |
 | L1 | `video_trust.verify_file` | Primitive verification record |
+| L1 | `video_trust.compare_preservation` | Deterministic before/after preservation primitive |
 | L2 | `video_trust.assess_video_integrity` | Domain reading of that same record |
 | L3 | — | Not in M1.5 |
 
 L1 and L2 share one core execution. Either may be the right call. L2 does
 not replace L1.
 
-Current M2 inspection is not a third Agent capability. The richer
-`video-trust inspect` text/JSON surface remains available through the CLI and
-domain layer; MCP continues to expose exactly the two verification tools above.
+MCP exposes these three tools. The richer `video-trust inspect` text/JSON
+surface remains available through the CLI and domain layer, not as another
+Agent capability.
 
 ## What you need
 
@@ -80,7 +82,7 @@ a chat Agent.
 
 ## Tools
 
-Both tools take:
+The two single-file tools take:
 
 | Field | Required | Meaning |
 | --- | --- | --- |
@@ -117,6 +119,32 @@ No language model runs inside the service. A validated signing key is not a
 trusted camera, not source authenticity, and not proof the depicted event
 is real.
 
+### `video_trust.compare_preservation`
+
+This read-only L1 deterministic primitive returns the complete frozen
+`media_signing_preservation_assessment` schema `0.1`; it does not reconstruct
+preservation from two single-file calls.
+
+| Field | Required | Meaning |
+| --- | --- | --- |
+| `before_path`, `after_path` | yes | Annex-B files inside an allowed root |
+| `codec` | yes | `h264` or `h265` |
+| `before_ca_path`, `after_ca_path` | no | Independent PEM anchors for the corresponding state |
+| `transformation` | no | Closed CLI enum; caller-declared and untrusted |
+| `pipeline_id` | no | Descriptive single-line text, 1–128 characters |
+
+The result directly exposes artifact identity, correlation, full/subset/unknown
+coverage, applicability, preservation, signing-metadata relationship,
+verification and inspection transitions, findings, and limitations.
+Transformation and pipeline ID are forwarded as descriptive context and never
+influence classification.
+
+Preservation is distinct from single-file verification. Valid signing does not
+establish source authenticity. A valid after-state does not establish full
+source coverage. Structurally changed H.265 can remain cryptographically valid.
+`PARTIAL` can mean incomplete trailing signing context rather than corruption,
+and preservation can remain `indeterminate`.
+
 ## Envelope
 
 A call returns a capability envelope:
@@ -136,7 +164,7 @@ carries the structured envelope. A negative `overall` is not an error result.
 `INVALID_REQUEST`, `PATH_NOT_ALLOWED`, `FILE_NOT_FOUND`,
 `UNSUPPORTED_CODEC`, `MALFORMED_MEDIA`, `INVALID_TRUST_ANCHOR`,
 `CORE_INPUT_REJECTED`, `CORE_UNAVAILABLE`, `CORE_EXECUTION_FAILED`,
-`CORE_TIMEOUT`, `CONTRACT_MISMATCH`.
+`CORE_TIMEOUT`, `CORE_OUTPUT_TOO_LARGE`, `CONTRACT_MISMATCH`.
 
 Public error text does not include raw core stderr or a host path.
 
@@ -144,7 +172,7 @@ Public error text does not include raw core stderr or a host path.
 
 Evidence metadata identifies the execution, not the camera:
 
-* root-relative `input_reference` and, when used, `trust_anchor_reference`
+* root-relative file/anchor references (single-file or before/after)
 * lowercase SHA-256 of the bytes read
 * `invocation_id`
 * `executed_at` in UTC
@@ -175,8 +203,8 @@ part of the public envelope.
 | Product | `v0.1.0` | File-based lab pre-release. Not an M1.5 tag. |
 | Core JSON schema | `0.1` | `video-trust verify --json` |
 | Agent contract | `0.1` | Capability envelope |
-| Capability | `0.1` | L1 and L2 |
-| Evaluation suite / scorer | `0.2` | Test harness only |
+| Capability | `0.1` | All three independently versioned capabilities |
+| Evaluation suite / scorer | `0.2` | Test harness; M3-I adds preservation scenarios without changing scorer semantics |
 
 ## Evaluation
 

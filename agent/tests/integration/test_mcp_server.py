@@ -94,7 +94,7 @@ def test_runtime_requires_executable_and_roots(tmp_path: Path) -> None:
         )
 
 
-def test_tools_list_exposes_exactly_two_read_only_tools(tmp_path: Path) -> None:
+def test_tools_list_exposes_exactly_three_read_only_tools(tmp_path: Path) -> None:
     service, _root, _clip = _service(tmp_path, "vt-valid")
 
     async def body():
@@ -103,14 +103,19 @@ def test_tools_list_exposes_exactly_two_read_only_tools(tmp_path: Path) -> None:
             return listed.tools
 
     tools = {tool.name: tool for tool in _run(body())}
-    assert set(tools) == {"video_trust.verify_file", "video_trust.assess_video_integrity"}
+    assert set(tools) == {
+        "video_trust.verify_file", "video_trust.assess_video_integrity",
+        "video_trust.compare_preservation",
+    }
     for tool in tools.values():
         assert tool.annotations is not None
         assert tool.annotations.read_only_hint is True
         assert tool.annotations.destructive_hint is False
         assert "prompt" not in json.dumps(tool.input_schema)
         assert tool.input_schema["additionalProperties"] is False
-        assert set(tool.input_schema["required"]) == {"input_file", "codec"}
+        expected = ({"before_path", "after_path", "codec"}
+                    if tool.name.endswith("compare_preservation") else {"input_file", "codec"})
+        assert set(tool.input_schema["required"]) == expected
         assert "h264" in json.dumps(tool.input_schema)
         assert "h265" in json.dumps(tool.input_schema)
         assert "sign" not in tool.name
@@ -162,6 +167,31 @@ def test_invalid_verification_is_mcp_success(tmp_path: Path) -> None:
     assert result.is_error is False
     assert result.structured_content["result"]["overall"] == "INVALID"
     assert result.structured_content["errors"] == []
+
+
+def test_compare_preservation_mcp_returns_complete_typed_document(tmp_path: Path) -> None:
+    service, root, clip = _service(tmp_path, "vt-valid")
+    after = root / "nested" / "after.h264"
+    after.write_bytes(clip.read_bytes())
+
+    async def body():
+        async with Client(create_server(service)) as client:
+            return await client.call_tool(
+                "video_trust.compare_preservation",
+                {"before_path": str(clip), "after_path": str(after), "codec": "h264",
+                 "transformation": "remux", "pipeline_id": "mcp-test"},
+            )
+
+    result = _run(body())
+    assert result.is_error is False
+    payload = result.structured_content
+    assert payload["capability"] == "video_trust.compare_preservation"
+    assert payload["capability_level"] == "primitive"
+    assert payload["result"]["document_type"] == "media_signing_preservation_assessment"
+    assert payload["result"]["coverage"]["state"] == "full"
+    assert payload["result"]["preservation"]["media_signing_evidence"] == "preserved"
+    assert payload["result"]["transformation"]["trust"] == "caller_declared_untrusted"
+    assert str(tmp_path) not in json.dumps(payload)
 
 
 def test_execution_failures_keep_the_envelope(tmp_path: Path) -> None:
@@ -233,6 +263,7 @@ def test_stdio_lists_tools_without_stdout_logs(tmp_path: Path) -> None:
     assert {tool.name for tool in listed.tools} == {
         "video_trust.verify_file",
         "video_trust.assess_video_integrity",
+        "video_trust.compare_preservation",
     }
     assert called.is_error is False
     assert "UNSIGNED" in called.content[0].text

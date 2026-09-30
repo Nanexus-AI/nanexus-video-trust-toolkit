@@ -53,6 +53,58 @@ def document(overall: str, schema_version: str = "0.1") -> dict:
     }
 
 
+def preservation_document(kind: str = "unspecified", pipeline_id: str | None = None) -> dict:
+    verification = {
+        "media_signing": "detected", "signature_integrity": "ok", "continuity": "intact",
+        "verification_completeness": "complete", "certificate_status": "not_provided",
+        "source_authenticity": "not_established", "public_key_has_changed": False, "overall": "VALID",
+    }
+    snapshot = {
+        "codec": "h264", "byte_size": 12,
+        "sha256": {"algorithm": "sha256", "value": "ab" * 32},
+        "nal_count": 3, "signing_sei_count": 1, "verification": verification,
+        "inspection": {"pending_nalus": 0, "pending_frames": 0, "pending_hashable_nalus": 0},
+    }
+    roles = {"vcl": 0, "sei": 0, "signing_sei": 0, "parameter_set": 0, "other": 0}
+    unmatched = {"total_count": 0, "sample_count": 0, "samples_truncated": False, "roles": roles}
+    return {
+        "document_type": "media_signing_preservation_assessment", "schema_version": "0.1",
+        "before": snapshot, "after": snapshot,
+        "transformation": {
+            "kind": kind.replace("-", "_"), "label": None, "pipeline_id": pipeline_id,
+            "tool_version": None, "log_digest": None, "trust": "caller_declared_untrusted",
+        },
+        "artifact_identity": {"byte_relation": "identical"},
+        "correlation": {
+            "quality": "complete", "stream_relation": "equivalent", "sequence_equivalent": "yes",
+            "after_is_ordered_subsequence": "yes", "unique_subsequence_alignment": "yes",
+            "reordered": "no", "duplicated_after": "no", "normalized_payload_matches": 3,
+            "unique_before_range": {"start_nal_index": 0, "end_nal_index": 2},
+            "unmatched_before": unmatched, "unmatched_after": unmatched,
+            "diagnostic_detail_bounded": False,
+            "signing_metadata": {
+                "relation": "equivalent", "before_count": 1, "after_count": 1,
+                "matched_payload_count": 1, "missing_from_after_count": 0,
+                "unmatched_after_count": 0, "correlation_complete": "yes",
+                "before_classification_complete": True, "after_classification_complete": True,
+            },
+        },
+        "coverage": {"state": "full"},
+        "applicability": {"media_signing_preservation": "applicable"},
+        "preservation": {"media_signing_evidence": "preserved"},
+        "transitions": {
+            "verification": {"before_overall": "VALID", "after_overall": "VALID",
+                "media_signing": "unchanged", "signature_integrity": "unchanged",
+                "continuity": "unchanged", "verification_completeness": "unchanged",
+                "certificate": "unchanged", "public_key_observation": "unchanged"},
+            "inspection": {"pending_nalus": "unchanged", "pending_frames": "unchanged",
+                "accumulated_timestamps": "indeterminate", "latest_timestamps": "indeterminate"},
+        },
+        "findings": [{"code": "EXACT_ARTIFACT_MATCH", "message": "same"}],
+        "limitations": [{"code": "SOURCE_AUTHENTICITY_NOT_ESTABLISHED", "message": "not established"}],
+    }
+
+
 def emit(payload: dict, exit_code: int) -> None:
     sys.stdout.write(json.dumps(payload))
     raise SystemExit(exit_code)
@@ -64,6 +116,25 @@ def main() -> None:
         raise SystemExit(0)
 
     mode = Path(sys.argv[0]).name
+    if len(sys.argv) > 1 and sys.argv[1] == "compare-preservation":
+        Path(sys.argv[0] + ".argv").write_text(json.dumps(sys.argv))
+        if mode == "vt-sleep":
+            time.sleep(5)
+        if mode == "vt-huge-out":
+            sys.stdout.buffer.write(b"A" * (2 * 1024 * 1024))
+            raise SystemExit(0)
+        if mode == "vt-exit2":
+            raise SystemExit(2)
+        if mode == "vt-bad-json":
+            sys.stdout.write("not-json")
+            raise SystemExit(0)
+        payload = preservation_document(
+            sys.argv[sys.argv.index("--transformation") + 1] if "--transformation" in sys.argv else "unspecified",
+            sys.argv[sys.argv.index("--pipeline-id") + 1] if "--pipeline-id" in sys.argv else None,
+        )
+        if mode == "vt-schema":
+            payload["schema_version"] = "9.9"
+        emit(payload, 0)
     if len(sys.argv) > 1 and sys.argv[1] == "verify":
         Path(sys.argv[0] + ".argv").write_text(json.dumps(sys.argv))
         Path(sys.argv[0] + ".env").write_text("\n".join(sorted(os.environ)))

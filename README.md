@@ -66,6 +66,7 @@ a stronger authenticity claim. See
 Agent tools, read-only:
 
 * `video_trust.verify_file` — the verification record (L1)
+* `video_trust.compare_preservation` — deterministic before/after preservation assessment (L1)
 * `video_trust.assess_video_integrity` — a deterministic reading of that same record (L2)
 
 The Agent interface does not currently expose the richer inspection surface as
@@ -182,12 +183,13 @@ Verification + inspection domain mapping
             └────────► InspectionResult ───────► inspect text / JSON 0.1
                                                (CLI/domain only)
 
-Agent path (verification contract only):
-VerificationResult ──► Python CoreClient
+Agent path (typed read-only contracts):
+VerificationResult / PreservationAssessment ──► Python CoreClient
             │
             ▼
 Agent capability layer
   L1  video_trust.verify_file
+  L1  video_trust.compare_preservation
   L2  video_trust.assess_video_integrity
             │
             ▼
@@ -215,7 +217,8 @@ repository. See [`docs/architecture.md`](docs/architecture.md).
 the experimental M1.5 Agent interface and M2 inspect/report work; neither is a
 new tagged release. Later milestones continue with VMS/NVR preservation,
 passive RTSP, edge, and integration work. Each milestone also reviews whether a
-new domain capability should appear to an Agent; M2 did not add Agent exposure.
+new domain capability should appear to an Agent; M2 did not add Agent exposure,
+while M3 adds the preservation comparison primitive.
 
 See [`docs/roadmap.md`](docs/roadmap.md).
 
