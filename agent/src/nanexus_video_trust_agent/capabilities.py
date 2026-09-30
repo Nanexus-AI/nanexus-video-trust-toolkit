@@ -16,6 +16,7 @@ from pydantic import ValidationError
 
 from nanexus_video_trust_agent.contracts import (
     ASSESS_VIDEO_INTEGRITY_CAPABILITY,
+    COMPARE_PRESERVATION_CAPABILITY,
     VERIFY_FILE_CAPABILITY,
     CapabilityEnvelope,
     CapabilityLevel,
@@ -35,6 +36,11 @@ from nanexus_video_trust_agent.contracts import (
     classify_request_validation,
 )
 from nanexus_video_trust_agent.core_client import CoreClient, CoreInvocation, _error
+from nanexus_video_trust_agent.preservation_contracts import (
+    ComparePreservationRequest,
+    PreservationCapabilityEnvelope,
+    PreservationEvidence,
+)
 from nanexus_video_trust_agent.policy import AllowedRoots
 
 _INTEGRITY: dict[OverallState, IntegrityAssessment] = {
@@ -172,6 +178,36 @@ class CapabilityService:
             capability=ASSESS_VIDEO_INTEGRITY_CAPABILITY,
             level=CapabilityLevel.domain_semantic,
             semantic=True,
+        )
+
+    def compare_preservation(
+        self, request: ComparePreservationRequest | Mapping[str, Any]
+    ) -> PreservationCapabilityEnvelope:
+        try:
+            parsed = request if isinstance(request, ComparePreservationRequest) else ComparePreservationRequest.model_validate(request)
+        except ValidationError as exc:
+            code = classify_request_validation(exc)
+            codec = _codec_if_known(exc)
+            return PreservationCapabilityEnvelope(
+                execution_status=ExecutionStatus.failed,
+                result=None,
+                evidence=PreservationEvidence(
+                    invocation_id=str(uuid4()), executed_at=datetime.now(timezone.utc), codec=codec
+                ),
+                errors=[_error(code)],
+            )
+        invocation = self._client.compare_preservation(request=parsed, policy=self._policy)
+        if invocation.error is not None or invocation.document is None:
+            return PreservationCapabilityEnvelope(
+                execution_status=ExecutionStatus.failed, result=None, evidence=invocation.evidence,
+                errors=[invocation.error or _error(ErrorCode.CONTRACT_MISMATCH)],
+            )
+        return PreservationCapabilityEnvelope(
+            execution_status=ExecutionStatus.success,
+            result=invocation.document,
+            evidence=invocation.evidence,
+            limitations=[],
+            errors=[],
         )
 
     def _invoke(

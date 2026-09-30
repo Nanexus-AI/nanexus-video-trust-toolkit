@@ -1,6 +1,6 @@
 """Experimental read-only MCP stdio adapter.
 
-This module registers two tools and translates their results. Path
+This module registers three tools and translates their results. Path
 policy, hashing, verification, and trust interpretation stay in the
 capability core.
 
@@ -29,6 +29,7 @@ from pydantic import ValidationError
 from nanexus_video_trust_agent.capabilities import CapabilityService
 from nanexus_video_trust_agent.contracts import (
     ASSESS_VIDEO_INTEGRITY_CAPABILITY,
+    COMPARE_PRESERVATION_CAPABILITY,
     PRODUCT_VERSION,
     VERIFY_FILE_CAPABILITY,
     CapabilityEnvelope,
@@ -37,11 +38,15 @@ from nanexus_video_trust_agent.contracts import (
 )
 from nanexus_video_trust_agent.core_client import MAX_TIMEOUT_SECONDS, CoreClient
 from nanexus_video_trust_agent.policy import AllowedRoots, AllowedRootsNotConfigured
+from nanexus_video_trust_agent.preservation_contracts import (
+    PreservationCapabilityEnvelope,
+    TransformationKind,
+)
 
 logger = logging.getLogger("nanexus_video_trust_agent.mcp_server")
 
 SERVER_INSTRUCTIONS = (
-    "Experimental read-only Media Signing tools. They verify one file and do not "
+    "Experimental read-only Media Signing tools. They verify or compare supplied files and do not "
     "establish source authenticity or that a depicted event is real. They do not "
     "sign, modify, or delete files."
 )
@@ -60,6 +65,14 @@ ASSESS_VIDEO_INTEGRITY_DESCRIPTION = (
     "A validated signing key is not a trusted camera, not source authenticity, and "
     "not proof the depicted event is real. Read-only: it does not sign, modify, or "
     "delete the file."
+)
+COMPARE_PRESERVATION_DESCRIPTION = (
+    "Compare verifier-observable Media Signing preservation between before and after Annex-B files. "
+    "Required: before_path, after_path, and codec (h264 or h265). Separate CA paths, a closed "
+    "caller-declared transformation, and a bounded pipeline_id are optional and never influence "
+    "classification. Returns the complete deterministic preservation assessment 0.1, including "
+    "coverage, signing-metadata relationship, transitions, findings, and limitations. A valid "
+    "after-state does not imply full source coverage or source authenticity. Read-only."
 )
 _READ_ONLY = ToolAnnotations(
     read_only_hint=True,
@@ -85,7 +98,7 @@ def load_runtime(environ: Mapping[str, str]) -> CapabilityService:
 
 
 def create_server(service: CapabilityService) -> MCPServer:
-    """Register the two read-only tools. Does not open a socket."""
+    """Register the three read-only tools. Does not open a socket."""
 
     server = MCPServer(
         name="nanexus-video-trust",
@@ -99,6 +112,7 @@ def create_server(service: CapabilityService) -> MCPServer:
         ASSESS_VIDEO_INTEGRITY_CAPABILITY,
         ASSESS_VIDEO_INTEGRITY_DESCRIPTION,
     )
+    _register_compare(server, service)
     _capture_raw_arguments(server)
     return server
 
@@ -144,24 +158,61 @@ def _register(
     server.tool(name=name, description=description, annotations=_READ_ONLY)(tool)
 
 
+def _register_compare(server: MCPServer, service: CapabilityService) -> None:
+    async def tool(
+        before_path: str,
+        after_path: str,
+        codec: Codec,
+        before_ca_path: str | None = None,
+        after_ca_path: str | None = None,
+        transformation: TransformationKind | None = None,
+        pipeline_id: str | None = None,
+    ) -> PreservationCapabilityEnvelope:
+        raw = _raw_arguments.get()
+        try:
+            payload = raw or {
+                "before_path": before_path,
+                "after_path": after_path,
+                "codec": codec,
+                "before_ca_path": before_ca_path,
+                "after_ca_path": after_ca_path,
+                "transformation": transformation,
+                "pipeline_id": pipeline_id,
+            }
+            return _tool_result(service.compare_preservation(payload))  # type: ignore[return-value]
+        finally:
+            _raw_arguments.set(None)
+
+    tool.__name__ = "video_trust_compare_preservation"
+    server.tool(
+        name=COMPARE_PRESERVATION_CAPABILITY,
+        description=COMPARE_PRESERVATION_DESCRIPTION,
+        annotations=_READ_ONLY,
+    )(tool)
+
+
 def _capture_raw_arguments(server: MCPServer) -> None:
     """Keep the caller's argument object so extra fields reach the capability."""
 
     for tool in server._tool_manager.list_tools():
         original = tool.fn_metadata.validate_arguments
+        tool_name = tool.name
 
-        def validate(arguments: dict[str, Any], original: Callable[..., dict[str, Any]] = original) -> dict[str, Any]:
+        def validate(arguments: dict[str, Any], original: Callable[..., dict[str, Any]] = original,
+                     tool_name: str = tool_name) -> dict[str, Any]:
             _raw_arguments.set(dict(arguments))
             try:
                 return original(arguments)
             except ValidationError:
+                if tool_name == COMPARE_PRESERVATION_CAPABILITY:
+                    return {"before_path": "x", "after_path": "x", "codec": Codec.h264}
                 return {"input_file": "x", "codec": Codec.h264, "trust_anchor": None}
 
         object.__setattr__(tool.fn_metadata, "validate_arguments", validate)
         tool.parameters["additionalProperties"] = False
 
 
-def _tool_result(envelope: CapabilityEnvelope) -> CallToolResult:
+def _tool_result(envelope: CapabilityEnvelope | PreservationCapabilityEnvelope) -> CallToolResult:
     """One envelope, as structured content and compact JSON text."""
 
     return CallToolResult(

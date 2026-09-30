@@ -24,12 +24,18 @@ from nanexus_video_trust_agent.contracts import (
     CAPABILITY_VERSION,
     CONTRACT_VERSION,
     VERIFY_FILE_CAPABILITY,
+    COMPARE_PRESERVATION_CAPABILITY,
     CapabilityError,
     Codec,
     ErrorCode,
     Evidence,
     OverallState,
     VerificationDocument,
+)
+from nanexus_video_trust_agent.preservation_contracts import (
+    ComparePreservationRequest,
+    PreservationAssessment,
+    PreservationEvidence,
 )
 from nanexus_video_trust_agent.policy import AllowedRoots, AuthorizedPath, PolicyFailure
 
@@ -61,6 +67,7 @@ _MESSAGES = {
     ErrorCode.CORE_UNAVAILABLE: "The video-trust executable is not available.",
     ErrorCode.CORE_EXECUTION_FAILED: "The core failed while verifying the file.",
     ErrorCode.CORE_TIMEOUT: "The core did not finish before the timeout.",
+    ErrorCode.CORE_OUTPUT_TOO_LARGE: "Core output exceeded the allowed size.",
     ErrorCode.CONTRACT_MISMATCH: "The core result did not match schema 0.1.",
 }
 
@@ -90,6 +97,27 @@ def build_verify_argv(
     argv.append(str(input_file))
     if argv[1] != "verify":
         raise RuntimeError("core client can only invoke verify")
+    return argv
+
+
+def build_compare_argv(
+    executable: Path,
+    request: ComparePreservationRequest,
+    before: Path,
+    after: Path,
+    before_ca: Path | None,
+    after_ca: Path | None,
+) -> list[str]:
+    argv = [str(executable), "compare-preservation", "--codec", request.codec.value, "--json"]
+    if before_ca is not None:
+        argv.extend(["--before-ca", str(before_ca)])
+    if after_ca is not None:
+        argv.extend(["--after-ca", str(after_ca)])
+    if request.transformation is not None:
+        argv.extend(["--transformation", request.transformation.value])
+    if request.pipeline_id is not None:
+        argv.extend(["--pipeline-id", request.pipeline_id])
+    argv.extend([str(before), str(after)])
     return argv
 
 
@@ -126,6 +154,14 @@ class CoreInvocation:
             "document": None if self.document is None else self.document.model_dump(mode="json"),
             "error": None if self.error is None else self.error.model_dump(mode="json"),
         }
+
+
+@dataclass
+class PreservationInvocation:
+    evidence: PreservationEvidence
+    document: PreservationAssessment | None = None
+    error: CapabilityError | None = None
+    retained_stderr: bytes = field(default=b"", repr=False)
 
 
 def interpret_verify_process(observation: ProcessObservation) -> tuple[
@@ -168,6 +204,39 @@ def interpret_verify_process(observation: ProcessObservation) -> tuple[
             ErrorCode.CONTRACT_MISMATCH,
             "Core exit code does not match the verification overall state.",
         ), document.schema_version
+    return document, None, document.schema_version
+
+
+def interpret_preservation_process(observation: ProcessObservation) -> tuple[
+    PreservationAssessment | None, CapabilityError | None, str | None
+]:
+    if observation.timed_out:
+        return None, _error(ErrorCode.CORE_TIMEOUT), None
+    if observation.stdout_overflow:
+        return None, _error(ErrorCode.CORE_OUTPUT_TOO_LARGE), None
+    if observation.exit_code == 2:
+        return None, _error(ErrorCode.CORE_INPUT_REJECTED), None
+    if observation.exit_code == 3 or observation.exit_code not in (0, 1, 4):
+        return None, _error(ErrorCode.CORE_EXECUTION_FAILED), None
+    try:
+        payload = json.loads(observation.stdout.decode("utf-8"))
+    except (UnicodeError, json.JSONDecodeError):
+        return None, _error(ErrorCode.CONTRACT_MISMATCH, "Core stdout was not valid JSON."), None
+    schema = payload.get("schema_version") if isinstance(payload, dict) else None
+    try:
+        document = PreservationAssessment.model_validate(payload)
+    except ValidationError:
+        return None, _error(ErrorCode.CONTRACT_MISMATCH), schema if isinstance(schema, str) else None
+    expected = {
+        "preserved": 0,
+        "partially_preserved": 1,
+        "not_preserved": 1,
+        "indeterminate": 4,
+    }[document.preservation.media_signing_evidence]
+    if document.applicability.media_signing_preservation != "applicable":
+        expected = 4
+    if observation.exit_code != expected:
+        return None, _error(ErrorCode.CONTRACT_MISMATCH, "Core exit code does not match preservation state."), document.schema_version
     return document, None, document.schema_version
 
 
@@ -242,6 +311,62 @@ class CoreClient:
             schema_version=schema_version,
             stderr=observation.stderr,
         )
+
+    def compare_preservation(
+        self, *, request: ComparePreservationRequest, policy: AllowedRoots
+    ) -> PreservationInvocation:
+        authorized: dict[str, AuthorizedPath | None] = {}
+        for field_name in ("before_path", "after_path", "before_ca_path", "after_ca_path"):
+            raw = getattr(request, field_name)
+            if raw is None:
+                authorized[field_name] = None
+                continue
+            try:
+                authorized[field_name] = policy.authorize(raw)
+            except PolicyFailure as exc:
+                return self._preservation_finished(
+                    request=request, authorized=authorized, document=None,
+                    error=_error(exc.code, exc.message), exit_code=None, schema_version=None, stderr=b"",
+                )
+        if not self.executable.is_file() or not os.access(self.executable, os.X_OK):
+            return self._preservation_finished(
+                request=request, authorized=authorized, document=None,
+                error=_error(ErrorCode.CORE_UNAVAILABLE), exit_code=None, schema_version=None, stderr=b"",
+            )
+        observation = self._run(build_compare_argv(
+            self.executable, request,
+            authorized["before_path"].canonical, authorized["after_path"].canonical,  # type: ignore[union-attr]
+            None if authorized["before_ca_path"] is None else authorized["before_ca_path"].canonical,
+            None if authorized["after_ca_path"] is None else authorized["after_ca_path"].canonical,
+        ))
+        document, error, schema_version = interpret_preservation_process(observation)
+        return self._preservation_finished(
+            request=request, authorized=authorized, document=document, error=error,
+            exit_code=None if observation.timed_out or observation.stdout_overflow else observation.exit_code,
+            schema_version=schema_version, stderr=observation.stderr,
+        )
+
+    def _preservation_finished(
+        self, *, request: ComparePreservationRequest, authorized: dict[str, AuthorizedPath | None],
+        document: PreservationAssessment | None, error: CapabilityError | None,
+        exit_code: int | None, schema_version: str | None, stderr: bytes,
+    ) -> PreservationInvocation:
+        def ref(name: str) -> str | None:
+            item = authorized.get(name)
+            return None if item is None else item.reference
+        def digest(name: str) -> str | None:
+            item = authorized.get(name)
+            return None if item is None else _sha256(item.canonical)
+        evidence = PreservationEvidence(
+            invocation_id=str(uuid.uuid4()), executed_at=datetime.now(timezone.utc), codec=request.codec,
+            before_sha256=digest("before_path"), after_sha256=digest("after_path"),
+            before_ca_sha256=digest("before_ca_path"), after_ca_sha256=digest("after_ca_path"),
+            before_reference=ref("before_path"), after_reference=ref("after_path"),
+            before_ca_reference=ref("before_ca_path"), after_ca_reference=ref("after_ca_path"),
+            core_version=self._core_version_text(), core_schema_version=schema_version, core_exit_code=exit_code,
+        )
+        return PreservationInvocation(evidence=evidence, document=document, error=error,
+                                      retained_stderr=stderr[:STDERR_CAP_BYTES])
 
     def _run(self, argv: list[str]) -> ProcessObservation:
         proc = subprocess.Popen(  # noqa: S603 — argv array, shell is false
