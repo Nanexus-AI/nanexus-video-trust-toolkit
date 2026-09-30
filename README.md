@@ -3,11 +3,13 @@
 Vendor-neutral **Video Trust** toolkit for file-based Media Signing workflows,
 built on the official ONVIF Media Signing Framework.
 
-The same verification core supports two file-based views:
+The same verification core supports three file-based tasks:
 
 * **Verify** — a compact verdict and trust-axis view, in text or stable M1 JSON 0.1.
 * **Inspect** — a richer observation report, in human-readable text or its
   separate inspection JSON 0.1 contract.
+* **Compare preservation** — a deterministic before/after assessment of
+  verifier-observable Media Signing evidence, correlation, and source coverage.
 
 Verification is also available through an experimental Agent interface:
 
@@ -28,13 +30,15 @@ M0 Feasibility:              Complete
 M1 File-based reference lab: Complete — v0.1.0 first developer release
 M1.5 Agent interface:        Experimental, on main (not a stable API)
 M2 Inspect + Report:         Implemented on current main (not a tagged release)
-M3 and later:                Planned
+M3 VMS/NVR preservation:    Implemented locally; awaiting publication approval
+M4 and later:               Planned
 Stable production release:   None
 ```
 
 `v0.1.0` is the first usable **developer** release of the file-based lab
 (GitHub Pre-release). Product version metadata is `0.1.0`. M1.5 adds an
-experimental Agent interface, and current `main` adds M2 file-based inspection.
+experimental Agent interface, and current local `main` adds M2 inspection and
+M3 preservation assessment. The unpublished M3 work is awaiting human review.
 These post-release changes are not part of `v0.1.0`, do not create a new tagged
 release, and do not make the Agent interface a stable public API.
 
@@ -54,6 +58,7 @@ Developer commands:
 * `video-trust sign`
 * `video-trust verify` (text + `--json`)
 * `video-trust inspect` (human-readable report + `--json`)
+* `video-trust compare-preservation` (before/after text + JSON 0.1)
 * `video-trust tamper` (deterministic test mutations)
 
 `verify` is the compact automation-facing verdict and axes contract. `inspect`
@@ -104,6 +109,11 @@ verification completeness, certificate status, and source authenticity.
 `source_authenticity` stays `not_established`. A SHA-256 in Agent evidence
 identifies bytes this layer read. It is not the ONVIF media signature.
 
+Preservation is another separate result. An after artifact may verify `VALID`
+while preservation is `indeterminate`; a valid ordered subset does not prove
+full source coverage. `PARTIAL` can result from a pending tail rather than bad
+signatures. See [`docs/preservation-v0.1.md`](docs/preservation-v0.1.md).
+
 ## What it is not
 
 * A VMS, NVR, camera client, or media player
@@ -111,8 +121,9 @@ identifies bytes this layer read. It is not the ONVIF media signature.
 * A replacement for the ONVIF Media Signing Framework
 * An ONVIF-certified or conformant product
 * A system that decides whether a depicted event is real
-* MP4/MKV, RTSP, live, ARM64, or production PKI tooling (not currently
-  supported; see the roadmap for planned areas)
+* General MP4/MKV input, live RTSP verification, ARM64, or production PKI
+  tooling. M3 uses container/RTSP only as controlled test adapters around
+  finite Annex-B artifacts.
 
 Sign, tamper, and other write operations stay on the CLI. The MCP server
 does not expose them.
@@ -142,6 +153,8 @@ video-trust sign --codec h264 --key signer.key.pem --cert signer-chain.pem \
 video-trust verify --codec h264 --ca ca.pem signed.h264
 video-trust inspect --codec h264 --ca ca.pem signed.h264
 video-trust inspect --codec h264 --ca ca.pem --json signed.h264
+video-trust compare-preservation --codec h264 --before-ca ca.pem \
+  --after-ca ca.pem --json signed.h264 exported.h264
 video-trust tamper --codec h264 --operation corrupt-vcl -o bad.h264 signed.h264
 video-trust verify --codec h264 --ca ca.pem bad.h264
 ```
@@ -213,10 +226,10 @@ repository. See [`docs/architecture.md`](docs/architecture.md).
 
 ## Roadmap
 
-`v0.1.0` is the published file-based reference lab. Current `main` also contains
-the experimental M1.5 Agent interface and M2 inspect/report work; neither is a
-new tagged release. Later milestones continue with VMS/NVR preservation,
-passive RTSP, edge, and integration work. Each milestone also reviews whether a
+`v0.1.0` is the published file-based reference lab. Current local `main` also
+contains the experimental M1.5 Agent interface, M2 inspect/report work, and
+unpublished M3 preservation work; none is a new tagged release. Later milestones
+continue with passive RTSP, edge, and integration work. Each milestone also reviews whether a
 new domain capability should appear to an Agent; M2 did not add Agent exposure,
 while M3 adds the preservation comparison primitive.
 
@@ -243,7 +256,10 @@ The Agent package depends on Pydantic and the MCP Python SDK, both MIT.
 * [`docs/m1-contracts.md`](docs/m1-contracts.md) — exit codes, trust axes, tamper semantics
 * [`docs/json-v0.1.md`](docs/json-v0.1.md) — JSON `schema_version` 0.1
 * [`docs/inspection-v0.1.md`](docs/inspection-v0.1.md) — inspect text/JSON contract
+* [`docs/preservation-v0.1.md`](docs/preservation-v0.1.md) — preservation text/JSON contract
+* [`docs/m3-frigate-case-study.md`](docs/m3-frigate-case-study.md) — sanitized, configuration-scoped M3 field result
 * [`docs/schemas/media-signing-inspection-0.1.json`](docs/schemas/media-signing-inspection-0.1.json) — formal inspection JSON Schema
+* [`docs/schemas/media-signing-preservation-assessment-0.1.json`](docs/schemas/media-signing-preservation-assessment-0.1.json) — formal preservation JSON Schema
 * [`docs/fixtures.md`](docs/fixtures.md) — test fixture provenance
 * [`docs/release-notes-v0.1.0.md`](docs/release-notes-v0.1.0.md) — frozen GitHub Release text
 * [`docs/roadmap.md`](docs/roadmap.md) — milestones

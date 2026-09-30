@@ -6,8 +6,8 @@ Nanexus Video Trust Toolkit is intended to become an open-source, vendor-neutral
 Video Trust toolkit. The first technical focus is **ONVIF Media Signing**.
 
 Longer-term areas (not implemented yet) may include video integrity tooling,
-signer/source identity, certificate/PKI handling, time integrity, VMS/NVR signing
-preservation, evidence verification, provenance/chain of custody, passive live
+signer/source identity, certificate/PKI handling, time integrity, evidence
+verification, provenance/chain of custody, passive live
 verification, and C2PA interoperability.
 
 ## Layering
@@ -67,9 +67,10 @@ The Nanexus layer must use the official Media Signing implementation for:
   in the `v0.1.0` release.** It adds richer observations, not a stronger trust
   verdict, and is not exposed as a separate Agent/MCP capability. See
   [`inspection-v0.1.md`](inspection-v0.1.md).
-* **M3 (active)** — adds L1 `video_trust.compare_preservation`, a read-only
-  binding to the frozen preservation assessment `0.1`; broader M3 closure is
-  not implied.
+* **M3** — finite-file correlation and preservation assessment, synthetic
+  H.264/H.265 transformation matrix, configuration-scoped VMS/NVR field
+  characterization, and L1 `video_trust.compare_preservation`. **Implemented
+  locally; publication approval pending.** It does not add M4 live RTSP behavior.
 
 See [`roadmap.md`](roadmap.md). This project is independent open-source work that
 uses the ONVIF Media Signing framework; it is not an official ONVIF project.

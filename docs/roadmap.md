@@ -6,8 +6,9 @@ High-level milestone picture for Nanexus Video Trust Toolkit.
 **Stable end-user release:** none yet.  
 **Current published developer release:** **M1 / `v0.1.0`** (Pre-release).
 
-M1.5 and M2 are implemented in current `main` development history. They are
-not part of the `v0.1.0` tag and do not imply that a later release exists.
+M1.5 and M2 are implemented in current `main` development history. M3 is
+implemented in unpublished local history and awaits human publication approval.
+None is part of the `v0.1.0` tag or implies that a later release exists.
 
 This is an independent open-source project using the ONVIF Media Signing
 framework/standard. It is **not** an official ONVIF project.
@@ -18,7 +19,7 @@ framework/standard. It is **not** an official ONVIF project.
 | **M1** | File-Based Reference Lab | **Complete** — `v0.1.0` released (Pre-release) |
 | **M1.5** | Experimental Agent interface | **Implemented on `main`** — not a stable API or a tagged release |
 | **M2** | Inspect + Report | **Implemented on current `main`** — unreleased; not a tagged release |
-| **M3** | VMS/NVR Preservation Testing | Planned |
+| **M3** | VMS/NVR Preservation Testing | **Implemented locally** — validation complete; publication approval pending |
 | **M4** | Passive Live RTSP Verification | Planned |
 | **M5** | ARM64 / Edge Deployment | Planned |
 | **M6** | Integration Layer | Planned |
@@ -72,13 +73,26 @@ It does not produce a stronger trust verdict: vendor observations do not prove
 device identity, and certificate trust does not establish source authenticity.
 The M1 verify JSON contract remains at version `0.1`.
 
-The experimental Agent interface remains unchanged at two verification tools;
 M2 inspection is available through the CLI/domain surface, not a separate MCP
 tool. Publication review and any future tag or release remain separate steps.
 
+## M3 — VMS/NVR Preservation Testing (implemented locally)
+
+Adds bounded H.264/H.265 artifact correlation, an independent preservation
+domain and closed JSON Schema `0.1`, `video-trust compare-preservation`, and a
+reproducible synthetic transformation matrix. A sanitized real-system study
+measures finite signed media through RTSP/TCP ingest, Frigate 0.17.1 recording,
+realtime export, Annex-B extraction, and Nanexus assessment. The result is
+limited to the tested configuration; it is not a universal Frigate or VMS/NVR
+compatibility claim. See [`m3-frigate-case-study.md`](m3-frigate-case-study.md).
+
+The Agent catalog adds one approved read-only L1 primitive,
+`video_trust.compare_preservation`, while preserving the two existing tool
+contracts. M3 does not add live RTSP verification; that remains M4 work.
+
 ## Later milestones (summary)
 
-* **M3** — preservation behavior through VMS/NVR paths
+* **M3** — finite stored/exported-media preservation assessment (implemented locally)
 * **M4** — passive live RTSP verification
 * **M5** — ARM64 / edge deployment (e.g. RK3588 / Jetson class targets)
 * **M6** — integration layer for adjacent systems

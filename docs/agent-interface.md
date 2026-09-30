@@ -224,7 +224,7 @@ credentials, a local model server, or a GPU.
 
 * Experimental. Field names and codes can still change before a stable API.
 * Annex-B H.264 and H.265 only.
-* Two read-only tools. No goal-level tool.
+* Three read-only tools. No goal-level tool.
 * No separate MCP exposure for the M2 inspection surface.
 * `source_authenticity` remains `not_established`.
 * The CLI `sign` and `tamper` commands are not Agent tools.

@@ -62,6 +62,23 @@ video-trust tamper --codec h264 --operation truncate --count 3 -o trunc.h264 sig
 Operations create controlled fixtures for verification tests. They are not a
 general video editor.
 
+### Compare preservation
+
+```bash
+video-trust compare-preservation --codec h264 \
+  --before-ca ca.pem --after-ca ca.pem \
+  --transformation proprietary-or-unknown \
+  --pipeline-id tested-export --json \
+  signed.h264 exported.h264
+```
+
+Both inputs are finite Annex-B files. The command reports artifact identity,
+NAL/signing-metadata correlation, source coverage, before/after verification,
+and Media Signing preservation as separate dimensions. Transformation and
+pipeline ID are caller-declared context and never change classification.
+Containers and RTSP are not accepted. See [`preservation-v0.1.md`](preservation-v0.1.md)
+and the formal [JSON Schema](schemas/media-signing-preservation-assessment-0.1.json).
+
 ## Complete workflow
 
 ```text
@@ -89,8 +106,10 @@ Details and caveats: [`m1-contracts.md`](m1-contracts.md).
 
 * **verify / inspect:** 0 positive · 1 negative integrity · 2 CLI/input · 3 runtime · 4 unsigned/incomplete/not verifiable
 * **sign / tamper:** 0 success · 2 CLI/input/path · 3 runtime
+* **compare-preservation:** 0 preserved · 1 partial/not preserved · 2 CLI/input · 3 runtime · 4 indeterminate/not applicable
 
 ## Agent access
 
-M1.5 can verify through MCP stdio. That path is read-only: it does not expose
-`sign`, `tamper`, or M2 `inspect`. See [`agent-interface.md`](agent-interface.md).
+The experimental Agent layer can verify and compare preservation through MCP
+stdio. It is read-only: it does not expose `sign`, `tamper`, or M2 `inspect`.
+See [`agent-interface.md`](agent-interface.md).
