@@ -20,7 +20,7 @@ framework/standard. It is **not** an official ONVIF project.
 | **M1.5** | Experimental Agent interface | **Implemented on `main`** — not a stable API or a tagged release |
 | **M2** | Inspect + Report | **Implemented on current `main`** — unreleased; not a tagged release |
 | **M3** | VMS/NVR Preservation Testing | **Complete and published on current `main`** — not a tagged release |
-| **M4** | Passive Live RTSP Verification | Planned |
+| **M4** | Passive Live RTSP Verification | **Implemented and scoped validation completed locally** — awaiting M4-G closure; unpublished |
 | **M5** | ARM64 / Edge Deployment | Planned |
 | **M6** | Integration Layer | Planned |
 | **M7** | Optional Legacy Signing Gateway | Planned |
@@ -89,6 +89,20 @@ compatibility claim. See [`m3-frigate-case-study.md`](m3-frigate-case-study.md).
 The Agent catalog adds one approved read-only L1 primitive,
 `video_trust.compare_preservation`, while preserving the two existing tool
 contracts. M3 does not add live RTSP verification; that remains M4 work.
+
+## M4 — Passive Live RTSP Verification (awaiting closure)
+
+Adds one-stream, bounded H.264/H.265 RTSP/TCP verification through a fixed
+GStreamer ingest graph and a separate live JSON Lines contract. Synthetic
+validation completed 54/54 repetitions, and a scoped Frigate/go2rtc case study
+completed ten real-system runs. The observations are limited to that tested
+configuration and do not establish generic camera/server compatibility,
+source identity, full coverage, preservation, or production readiness. See
+[`m4-frigate-live-case-study.md`](m4-frigate-live-case-study.md).
+
+M4 remains unarchived and unpublished pending its final M4-G regression,
+publication audit, history review, and coordinator decision. M5 ARM64/edge and
+gateway work are separate milestones.
 
 ## Later milestones (summary)
 

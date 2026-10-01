@@ -2,8 +2,9 @@
 
 Experimental / pre-release developer reference lab. The `v0.1.0` release
 contains Annex-B `verify` / `sign` / `tamper` for H.264 and H.265; current
-`main` also contains `inspect` and `compare-preservation` and is not a new
-tagged release.
+`main` also contains `inspect`, `compare-preservation`, and bounded
+`verify-live`; M4 has completed scoped local validation but is awaiting closure
+and is not a new tagged release.
 
 ## Supported platform
 
@@ -82,6 +83,7 @@ uses a separate `schema_version` of `"0.1"` — that is not the product SemVer.
 
 * [`usage.md`](usage.md) — command examples
 * [`live-matrix.md`](live-matrix.md) — reproducible synthetic RTSP/TCP matrix
+* [`m4-frigate-live-case-study.md`](m4-frigate-live-case-study.md) — scoped live RTSP observation
 * [`m1-contracts.md`](m1-contracts.md) — exit codes and trust semantics
 * [`json-v0.1.md`](json-v0.1.md) — JSON contract
 * [`inspection-v0.1.md`](inspection-v0.1.md) — inspection text/JSON contract

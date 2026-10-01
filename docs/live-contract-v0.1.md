@@ -100,7 +100,9 @@ runtime values accept only a bounded opaque token and timestamp character set.
 
 Valid live evidence establishes neither source/camera authenticity nor the
 identity of depicted events. Joining a stream does not establish coverage
-before the connection. Live verification does not assess preservation.
+before the connection. Live verification does not assess preservation. The
+[`scoped live case study`](m4-frigate-live-case-study.md) exercises this
+contract in one tested configuration without changing these limitations.
 
 ## Runtime metadata and equivalence
 

@@ -72,6 +72,12 @@ The Nanexus layer must use the official Media Signing implementation for:
   characterization, and L1 `video_trust.compare_preservation`. **Complete and
   published on current `main`; not a tagged release.** It does not add M4 live
   RTSP behavior.
+* **M4** — bounded, one-stream H.264/H.265 RTSP/TCP verification through a
+  fixed GStreamer ingest graph, with a separate live JSON Lines 0.1 contract.
+  **Implemented and scoped validation completed locally; awaiting M4-G closure
+  and unpublished.** It does not decode, render, transcode, re-encode, restream,
+  or record, and it makes no continuity claim across an unobserved gap. See
+  [`m4-frigate-live-case-study.md`](m4-frigate-live-case-study.md).
 
 See [`roadmap.md`](roadmap.md). This project is independent open-source work that
 uses the ONVIF Media Signing framework; it is not an official ONVIF project.

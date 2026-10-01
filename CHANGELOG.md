@@ -19,6 +19,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - M3 bounded H.264/H.265 preservation correlation, assessment contract and
   schema `0.1`, comparison CLI, synthetic transformation matrix, and scoped
   Frigate case study
+- M4 bounded one-stream H.264/H.265 RTSP/TCP verification, live JSON Lines
+  contract and schema, synthetic validation matrix, and configuration-scoped
+  Frigate/go2rtc case study; implemented locally and awaiting M4-G closure
 - Experimental Agent interface on `main` (not a release tag): Python capability
   layer, read-only MCP stdio tools `video_trust.verify_file`,
   `video_trust.assess_video_integrity`, and
@@ -34,6 +37,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - M2 inspection remains CLI/domain-facing only. M3 adds the deterministic
   read-only preservation comparison tool without exposing inspection as a
   separate Agent/MCP capability.
+- M4 does not add an Agent/MCP tool. Its live result does not establish source
+  identity, prior/full coverage, preservation, or generic camera compatibility.
 - Post-`v0.1.0` development continues here after the first developer release.
 
 ## [0.1.0] — 2026-09-27

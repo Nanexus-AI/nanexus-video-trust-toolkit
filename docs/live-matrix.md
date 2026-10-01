@@ -5,6 +5,10 @@ generated Annex-B material through a pinned MediaMTX container and consumes it
 through the public RTSP/TCP `verify-live` path. It is not a camera, VMS, or
 production-network compatibility test.
 
+This matrix is the semantic oracle for the separate
+[`scoped real-system case study`](m4-frigate-live-case-study.md); that field
+observation does not broaden the matrix into a general compatibility claim.
+
 The case manifest is `tests/fixtures/live-matrix.json`. Fixtures are generated
 outside the repository from the deterministic sources described in
 `docs/fixtures.md`; private keys, generated media, raw endpoints, and run

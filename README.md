@@ -31,14 +31,15 @@ M1 File-based reference lab: Complete — v0.1.0 first developer release
 M1.5 Agent interface:        Experimental, on main (not a stable API)
 M2 Inspect + Report:         Implemented on current main (not a tagged release)
 M3 VMS/NVR preservation:    Complete — published on current main (not a tagged release)
-M4 and later:               Planned
+M4 Passive live RTSP:       Implemented + scoped validation on local main; closure pending
 Stable production release:   None
 ```
 
 `v0.1.0` is the first usable **developer** release of the file-based lab
 (GitHub Pre-release). Product version metadata is `0.1.0`. M1.5 adds an
-experimental Agent interface, and current `main` adds M2 inspection and M3
-preservation assessment. These post-release changes are not part of `v0.1.0`,
+experimental Agent interface, and current `main` adds M2 inspection, M3
+preservation assessment, and bounded M4 live verification. These post-release
+changes are not part of `v0.1.0`,
 do not create a new tagged release, and do not make the Agent interface a
 stable public API.
 
@@ -59,6 +60,7 @@ Developer commands:
 * `video-trust verify` (text + `--json`)
 * `video-trust inspect` (human-readable report + `--json`)
 * `video-trust compare-preservation` (before/after text + JSON 0.1)
+* `video-trust verify-live` (bounded one-stream RTSP/TCP text + JSONL 0.1)
 * `video-trust tamper` (deterministic test mutations)
 
 `verify` is the compact automation-facing verdict and axes contract. `inspect`
@@ -121,9 +123,10 @@ signatures. See [`docs/preservation-v0.1.md`](docs/preservation-v0.1.md).
 * A replacement for the ONVIF Media Signing Framework
 * An ONVIF-certified or conformant product
 * A system that decides whether a depicted event is real
-* General MP4/MKV input, live RTSP verification, ARM64, or production PKI
-  tooling. M3 uses container/RTSP only as controlled test adapters around
-  finite Annex-B artifacts.
+* General MP4/MKV input, a production RTSP monitoring service, ARM64, or
+  production PKI tooling. M4 provides one bounded developer/reference-lab
+  RTSP/TCP verification command, not a VMS, recorder, or camera-compatibility
+  guarantee.
 
 Sign, tamper, and other write operations stay on the CLI. The MCP server
 does not expose them.
@@ -132,7 +135,8 @@ does not expose them.
 
 ```bash
 sudo apt-get install -y build-essential pkg-config meson ninja-build \
-  libssl-dev ffmpeg git ca-certificates python3-jsonschema
+  libssl-dev libgstreamer1.0-dev libgstreamer-plugins-base1.0-dev \
+  gstreamer1.0-plugins-good ffmpeg git ca-certificates python3-jsonschema
 
 git clone https://github.com/Nanexus-AI/nanexus-video-trust-toolkit.git
 cd nanexus-video-trust-toolkit
@@ -157,6 +161,8 @@ video-trust compare-preservation --codec h264 --before-ca ca.pem \
   --after-ca ca.pem --json signed.h264 exported.h264
 video-trust tamper --codec h264 --operation corrupt-vcl -o bad.h264 signed.h264
 video-trust verify --codec h264 --ca ca.pem bad.h264
+video-trust verify-live --codec h264 --duration 30 --ca ca.pem --jsonl \
+  rtsp://camera.example/stream
 ```
 
 More detail: [`docs/build.md`](docs/build.md), [`docs/usage.md`](docs/usage.md),
@@ -227,9 +233,10 @@ repository. See [`docs/architecture.md`](docs/architecture.md).
 ## Roadmap
 
 `v0.1.0` is the published file-based reference lab. Current `main` also contains
-the experimental M1.5 Agent interface, M2 inspect/report work, and completed M3
-preservation work; none is a new tagged release. Later milestones continue with
-passive RTSP, edge, and integration work. Each milestone also reviews whether a
+the experimental M1.5 Agent interface, M2 inspect/report work, completed M3
+preservation work, and locally implemented/scoped-validated M4 passive RTSP
+work awaiting final closure; none is a new tagged release. Later milestones
+continue with edge and integration work. Each milestone also reviews whether a
 new domain capability should appear to an Agent; M2 did not add Agent exposure,
 while M3 adds the preservation comparison primitive.
 
@@ -258,6 +265,8 @@ The Agent package depends on Pydantic and the MCP Python SDK, both MIT.
 * [`docs/inspection-v0.1.md`](docs/inspection-v0.1.md) — inspect text/JSON contract
 * [`docs/preservation-v0.1.md`](docs/preservation-v0.1.md) — preservation text/JSON contract
 * [`docs/live-contract-v0.1.md`](docs/live-contract-v0.1.md) — live JSONL contract
+* [`docs/live-matrix.md`](docs/live-matrix.md) — synthetic live validation matrix
+* [`docs/m4-frigate-live-case-study.md`](docs/m4-frigate-live-case-study.md) — scoped Frigate/go2rtc live result
 * [`docs/m3-frigate-case-study.md`](docs/m3-frigate-case-study.md) — sanitized, configuration-scoped M3 field result
 * [`docs/schemas/media-signing-inspection-0.1.json`](docs/schemas/media-signing-inspection-0.1.json) — formal inspection JSON Schema
 * [`docs/schemas/media-signing-preservation-assessment-0.1.json`](docs/schemas/media-signing-preservation-assessment-0.1.json) — formal preservation JSON Schema

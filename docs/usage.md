@@ -46,6 +46,8 @@ H.265 video stream is supported.
 Live valid evidence does not establish source authenticity. Joining does not
 establish prior coverage, preservation is not assessed, and an unresolved tail
 is not corruption. This command is not a production monitor or service.
+The [`scoped live case study`](m4-frigate-live-case-study.md) records one tested
+Frigate/go2rtc configuration; it is not a general compatibility claim.
 
 ### Sign
 
