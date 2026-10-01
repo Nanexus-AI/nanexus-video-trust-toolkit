@@ -1,0 +1,39 @@
+{
+  "schema_version": "0.1",
+  "infrastructure": {
+    "server": "MediaMTX",
+    "server_version": "1.15.3",
+    "transport": "rtsp_tcp",
+    "publisher": "ffmpeg_stream_copy"
+  },
+  "normalization": ["runtime"],
+  "cases": [
+    {"id":"e1-clean-h264","requirement":"E1","codec":"h264","fixture":"signed.h264","mode":"deadline","duration":6,"repetitions":3,"expected":{"exit":4,"stop_reason":"deadline_reached","worst_closed_outcome":"valid","min_closed":2,"final_tail_state":"ended_with_unresolved_tail"}},
+    {"id":"e1-clean-h265","requirement":"E1","codec":"h265","fixture":"signed.h265","mode":"deadline","duration":6,"repetitions":3,"expected":{"exit":4,"stop_reason":"deadline_reached","worst_closed_outcome":"valid","min_closed":2,"final_tail_state":"ended_with_unresolved_tail"}},
+    {"id":"e2-unsigned-h264","requirement":"E2","codec":"h264","fixture":"unsigned.h264","mode":"deadline","duration":4,"repetitions":2,"expected":{"exit":4,"stop_reason":"deadline_reached","worst_closed_outcome":"unsigned","min_closed":1,"final_tail_state":"ended_with_unresolved_tail"}},
+    {"id":"e2-unsigned-h265","requirement":"E2","codec":"h265","fixture":"unsigned.h265","mode":"deadline","duration":4,"repetitions":2,"expected":{"exit":4,"stop_reason":"deadline_reached","worst_closed_outcome":"unsigned","min_closed":1,"final_tail_state":"ended_with_unresolved_tail"}},
+    {"id":"e3-corrupt-h264","requirement":"E3","codec":"h264","fixture":"corrupt-every-gop.h264","mode":"deadline","duration":8,"repetitions":2,"expected":{"exit":1,"stop_reason":"deadline_reached","worst_closed_outcome":"invalid","min_closed":1,"final_tail_state":"ended_with_unresolved_tail"}},
+    {"id":"e3-corrupt-h265","requirement":"E3","codec":"h265","fixture":"corrupt-every-gop.h265","mode":"deadline","duration":8,"repetitions":2,"expected":{"exit":1,"stop_reason":"deadline_reached","worst_closed_outcome":"invalid","min_closed":1,"final_tail_state":"ended_with_unresolved_tail"}},
+    {"id":"e4-sei-removed-h264","requirement":"E4","codec":"h264","fixture":"stripped.h264","mode":"deadline","duration":4,"repetitions":2,"expected":{"exit":4,"stop_reason":"deadline_reached","worst_closed_outcome":"unsigned","min_closed":1,"final_tail_state":"ended_with_unresolved_tail"}},
+    {"id":"e4-sei-removed-h265","requirement":"E4","codec":"h265","fixture":"stripped.h265","mode":"deadline","duration":4,"repetitions":2,"expected":{"exit":4,"stop_reason":"deadline_reached","worst_closed_outcome":"unsigned","min_closed":1,"final_tail_state":"ended_with_unresolved_tail"}},
+    {"id":"e5-delayed-close-h264","requirement":"E5","codec":"h264","fixture":"signed.h264","mode":"deadline","duration":6,"repetitions":2,"expected":{"exit":4,"stop_reason":"deadline_reached","worst_closed_outcome":"valid","min_closed":2,"require_pending_then_closed":true}},
+    {"id":"e5-delayed-close-h265","requirement":"E5","codec":"h265","fixture":"signed.h265","mode":"deadline","duration":6,"repetitions":2,"expected":{"exit":4,"stop_reason":"deadline_reached","worst_closed_outcome":"valid","min_closed":2,"require_pending_then_closed":true}},
+    {"id":"e6-pending-stop-h264","requirement":"E6","codec":"h264","fixture":"signed.h264","mode":"deadline","duration":3,"repetitions":2,"expected":{"exit":4,"stop_reason":"deadline_reached","worst_closed_outcome":"valid","min_closed":1,"final_tail_state":"ended_with_unresolved_tail"}},
+    {"id":"e6-pending-stop-h265","requirement":"E6","codec":"h265","fixture":"signed.h265","mode":"deadline","duration":3,"repetitions":2,"expected":{"exit":4,"stop_reason":"deadline_reached","worst_closed_outcome":"valid","min_closed":1,"final_tail_state":"ended_with_unresolved_tail"}},
+    {"id":"e7-mid-sequence-h264","requirement":"E7","codec":"h264","fixture":"signed.h264","mode":"mid_sequence","duration":5,"join_delay":0.35,"repetitions":2,"expected":{"exit":4,"stop_reason":"deadline_reached","worst_closed_outcome":"valid","min_closed":1}},
+    {"id":"e7-mid-sequence-h265","requirement":"E7","codec":"h265","fixture":"signed.h265","mode":"mid_sequence","duration":5,"join_delay":0.35,"repetitions":2,"expected":{"exit":4,"stop_reason":"deadline_reached","worst_closed_outcome":"valid","min_closed":1}},
+    {"id":"e8-disconnect-h264","requirement":"E8","codec":"h264","fixture":"signed.h264","mode":"disconnect","duration":10,"publisher_action_after":4,"repetitions":2,"expected":{"exit":4,"stop_reason":"orderly_end","worst_closed_outcome":"valid","min_closed":1,"final_tail_state":"ended_with_unresolved_tail"}},
+    {"id":"e8-disconnect-h265","requirement":"E8","codec":"h265","fixture":"signed.h265","mode":"disconnect","duration":10,"publisher_action_after":4,"repetitions":2,"expected":{"exit":4,"stop_reason":"orderly_end","worst_closed_outcome":"valid","min_closed":1,"final_tail_state":"ended_with_unresolved_tail"}},
+    {"id":"e9-stall-h264","requirement":"E9","codec":"h264","fixture":"signed.h264","mode":"stall","duration":15,"publisher_action_after":4,"repetitions":2,"expected":{"exit":3,"stop_reason":"transport_failure","worst_closed_outcome":"valid","min_closed":1}},
+    {"id":"e9-stall-h265","requirement":"E9","codec":"h265","fixture":"signed.h265","mode":"stall","duration":15,"publisher_action_after":4,"repetitions":2,"expected":{"exit":3,"stop_reason":"transport_failure","worst_closed_outcome":"valid","min_closed":1}},
+    {"id":"e10-connect-failure","requirement":"E10","codec":"h264","fixture":null,"mode":"connection_failure","duration":1,"repetitions":2,"expected":{"exit":3,"stop_reason":"transport_failure","worst_closed_outcome":null,"min_closed":0,"final_tail_state":"no_pending_tail"}},
+    {"id":"e11-malformed-h264","requirement":"E11","codec":"h264","fixture":"malformed.h264","mode":"raw_rtp","duration":2,"repetitions":1,"expected":{"exit":1,"stop_reason":"deadline_reached","worst_closed_outcome":"invalid","min_closed":1}},
+    {"id":"e12-oversized-h264","requirement":"E12","codec":"h264","fixture":"oversized.h264","mode":"raw_rtp","duration":20,"repetitions":1,"expected":{"exit":3,"stop_reason":"resource_limit","worst_closed_outcome":"valid","min_closed":1,"final_tail_state":"no_pending_tail"}},
+    {"id":"e13-parameter-repeat-h264","requirement":"E13","codec":"h264","fixture":"signed.h264","mode":"deadline","duration":6,"repetitions":2,"expected":{"exit":4,"stop_reason":"deadline_reached","worst_closed_outcome":"valid","min_closed":2,"max_epochs":1}},
+    {"id":"e13-parameter-repeat-h265","requirement":"E13","codec":"h265","fixture":"signed.h265","mode":"deadline","duration":6,"repetitions":2,"expected":{"exit":4,"stop_reason":"deadline_reached","worst_closed_outcome":"valid","min_closed":2,"max_epochs":1}},
+    {"id":"e14-config-change-h264","requirement":"E14","codec":"h264","fixture":"parameter-change.h264","mode":"deadline","duration":8,"repetitions":2,"expected":{"exit":0,"stop_reason":"orderly_end","worst_closed_outcome":"valid","min_closed":1,"max_epochs":1,"final_tail_state":"no_pending_tail"}},
+    {"id":"e14-config-change-h265","requirement":"E14","codec":"h265","fixture":"parameter-change.h265","mode":"deadline","duration":8,"repetitions":2,"expected":{"exit":0,"stop_reason":"orderly_end","worst_closed_outcome":"valid","min_closed":1,"max_epochs":1,"final_tail_state":"no_pending_tail"}},
+    {"id":"e15-min-duration-h264","requirement":"E15","codec":"h264","fixture":"signed.h264","mode":"deadline","duration":1,"repetitions":2,"expected":{"exit":4,"stop_reason":"deadline_reached","min_closed":0}},
+    {"id":"e15-normal-duration-h265","requirement":"E15","codec":"h265","fixture":"signed.h265","mode":"deadline","duration":5,"repetitions":2,"expected":{"exit":4,"stop_reason":"deadline_reached","worst_closed_outcome":"valid","min_closed":1}}
+  ]
+}

@@ -81,6 +81,7 @@ uses a separate `schema_version` of `"0.1"` — that is not the product SemVer.
 ## Next
 
 * [`usage.md`](usage.md) — command examples
+* [`live-matrix.md`](live-matrix.md) — reproducible synthetic RTSP/TCP matrix
 * [`m1-contracts.md`](m1-contracts.md) — exit codes and trust semantics
 * [`json-v0.1.md`](json-v0.1.md) — JSON contract
 * [`inspection-v0.1.md`](inspection-v0.1.md) — inspection text/JSON contract
