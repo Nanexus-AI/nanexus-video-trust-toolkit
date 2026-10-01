@@ -259,8 +259,10 @@ Expected<std::vector<LiveObservation>> IncrementalLiveValidator::EndEpoch(
   onvif_media_signing_authenticity_t* report =
       onvif_media_signing_get_authenticity_report(session_.get());
   if (!report) {
-    return MakeError(ErrorCode::UpstreamFailure,
-                     "final incremental ONVIF report was unavailable");
+    auto ended = semantic_.EndEpoch(reason);
+    if (!ended.ok()) return ended.error();
+    out.push_back(std::move(ended.value()));
+    return out;
   }
   InspectionResult snapshot = MapInspectionFromUpstream(
       session_.codec(), *report, trust_anchor_provided_);

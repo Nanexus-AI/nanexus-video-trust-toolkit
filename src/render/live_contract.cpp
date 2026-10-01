@@ -399,4 +399,17 @@ std::string RenderLiveObservationText(const LiveObservation& observation) {
   return out.str();
 }
 
+ExitCode ExitCodeForLive(const ClosedEvidenceSummary& closed,
+                         LiveTailState tail,
+                         LiveStopReason stop) noexcept {
+  if (closed.invalid > 0) return ExitCode::VerificationNegative;
+  if (stop == LiveStopReason::TransportFailure ||
+      stop == LiveStopReason::ResourceLimit || stop == LiveStopReason::Reset ||
+      stop == LiveStopReason::Reconfigured) return ExitCode::RuntimeFailure;
+  if (tail == LiveTailState::EndedWithUnresolvedTail ||
+      closed.unsigned_stream > 0 || closed.not_verifiable > 0 ||
+      closed.valid == 0) return ExitCode::UnsignedOrNotVerifiable;
+  return ExitCode::Success;
+}
+
 }  // namespace videotrust

@@ -72,5 +72,8 @@ class LiveContractRenderer {
 };
 
 std::string RenderLiveObservationText(const LiveObservation& observation);
+ExitCode ExitCodeForLive(const ClosedEvidenceSummary& closed,
+                         LiveTailState tail,
+                         LiveStopReason stop) noexcept;
 
 }  // namespace videotrust

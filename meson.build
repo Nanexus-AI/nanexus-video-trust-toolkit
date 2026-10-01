@@ -19,6 +19,11 @@ if oms_prefix == ''
 endif
 
 openssl_dep = dependency('openssl', version: '>=3.0.0')
+gst_dep = dependency('gstreamer-1.0', version: '>=1.24',
+  required: get_option('live_rtsp'))
+gst_app_dep = dependency('gstreamer-app-1.0', version: '>=1.24',
+  required: get_option('live_rtsp'))
+live_rtsp_enabled = gst_dep.found() and gst_app_dep.found()
 
 oms_lib_candidates = [
   oms_prefix / 'lib',
@@ -94,17 +99,39 @@ videotrust_core = static_library(
   install: false,
 )
 
+live_sources = []
+live_deps = []
+if live_rtsp_enabled
+  live_sources += files('src/live/gstreamer_ingest.cpp')
+  live_deps += [gst_dep, gst_app_dep]
+endif
+
+videotrust_links = [videotrust_core]
+if live_rtsp_enabled
+  videotrust_live = static_library(
+    'videotrust_live',
+    live_sources,
+    include_directories: inc,
+    dependencies: [oms_dep] + live_deps,
+    install: false,
+  )
+  videotrust_links += videotrust_live
+endif
+
 videotrust_dep = declare_dependency(
-  link_with: videotrust_core,
+  link_with: videotrust_links,
   include_directories: inc,
-  dependencies: oms_dep,
+  dependencies: [oms_dep] + live_deps,
 )
 
 video_trust = executable(
   'video-trust',
   'src/cli/main.cpp',
   dependencies: videotrust_dep,
-  cpp_args: ['-DVIDEO_TRUST_VERSION="' + meson.project_version() + '"'],
+  cpp_args: [
+    '-DVIDEO_TRUST_VERSION="' + meson.project_version() + '"',
+    live_rtsp_enabled ? '-DVIDEO_TRUST_HAS_GSTREAMER=1' : '-DVIDEO_TRUST_HAS_GSTREAMER=0',
+  ],
   install: true,
 )
 
@@ -123,6 +150,7 @@ summary(
     'oms_prefix': oms_prefix,
     'oms_libdir': oms_lib_dir,
     'oms_includedir': oms_inc_dir,
+    'live_rtsp': live_rtsp_enabled,
   },
   section: 'ONVIF Media Signing dependency',
 )

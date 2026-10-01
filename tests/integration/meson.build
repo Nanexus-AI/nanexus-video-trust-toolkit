@@ -65,6 +65,18 @@ test(
 )
 
 python = import('python').find_installation('python3')
+if live_rtsp_enabled
+  test(
+    'verify_live_cli_contract',
+    python,
+    args: [
+      meson.project_source_root() / 'tests/integration/test_verify_live_cli.py',
+      video_trust.full_path(),
+      meson.project_source_root() / 'docs/schemas/media-signing-live-session-event-0.1.json',
+    ],
+    timeout: 60,
+  )
+endif
 inspect_test_script = meson.project_source_root() / 'tests/integration/test_inspect_cli.py'
 inspection_schema = meson.project_source_root() / 'docs/schemas/media-signing-inspection-0.1.json'
 preservation_schema = meson.project_source_root() / 'docs/schemas/media-signing-preservation-assessment-0.1.json'

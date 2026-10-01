@@ -1,5 +1,7 @@
 #include "videotrust/compare.hpp"
 #include "videotrust/error.hpp"
+#include "videotrust/live_contract.hpp"
+#include "videotrust/live_ingest.hpp"
 #include "videotrust/render.hpp"
 #include "videotrust/result.hpp"
 #include "videotrust/sign.hpp"
@@ -7,6 +9,7 @@
 #include "videotrust/verify.hpp"
 
 #include <cstdlib>
+#include <csignal>
 #include <iostream>
 #include <string>
 #include <string_view>
@@ -18,11 +21,22 @@ namespace {
 #define VIDEO_TRUST_VERSION "0.1.0"
 #endif
 
+#ifndef VIDEO_TRUST_HAS_GSTREAMER
+#define VIDEO_TRUST_HAS_GSTREAMER 0
+#endif
+
+#if VIDEO_TRUST_HAS_GSTREAMER
+volatile std::sig_atomic_t g_live_cancel_requested = 0;
+void RequestLiveCancel(int) { g_live_cancel_requested = 1; }
+#endif
+
 void Usage(std::ostream& out) {
   out << "video-trust " << VIDEO_TRUST_VERSION << "\n"
       << "Usage:\n"
       << "  video-trust verify --codec h264|h265 [--ca PATH] [--json] <input.es>\n"
       << "  video-trust inspect --codec h264|h265 [--ca PATH] [--json] <input.es>\n"
+      << "  video-trust verify-live --codec h264|h265 --duration SECONDS\n"
+      << "                    [--ca PATH] [--jsonl] [--summary-only] <rtsp-url>\n"
       << "  video-trust compare-preservation --codec h264|h265\n"
       << "                   [--before-ca PATH] [--after-ca PATH] [--json]\n"
       << "                   [--transformation CLASS] [--pipeline-id TEXT]\n"
@@ -109,6 +123,18 @@ struct VerifyArgs {
   std::string input;
 };
 
+struct LiveArgs {
+  CommonCodec codec;
+  unsigned duration_seconds{0};
+  bool duration_set{false};
+  bool jsonl{false};
+  bool summary_only{false};
+  std::string ca;
+  std::string endpoint;
+  std::string username;
+  std::string password;
+};
+
 struct SignArgs {
   CommonCodec codec;
   std::string key;
@@ -186,6 +212,178 @@ bool ParseVerifyArgs(int argc, char** argv, VerifyArgs& out, std::string& err) {
 
 bool ParseInspectArgs(int argc, char** argv, VerifyArgs& out, std::string& err) {
   return ParseVerifyArgs(argc, argv, out, err);
+}
+
+bool ParseLiveArgs(int argc, char** argv, LiveArgs& out, std::string& err) {
+  std::vector<std::string> positionals;
+  for (int i = 2; i < argc; ++i) {
+    const std::string_view argument(argv[i]);
+    if (argument == "--jsonl") out.jsonl = true;
+    else if (argument == "--summary-only") out.summary_only = true;
+    else if (argument == "--codec") {
+      if (i + 1 >= argc) { err = "--codec requires a value"; return false; }
+      if (!ParseCodecValue(argv[++i], out.codec.codec, err)) return false;
+      out.codec.set = true;
+    } else if (argument == "--duration") {
+      if (i + 1 >= argc) { err = "--duration requires seconds"; return false; }
+      try {
+        const unsigned long value = std::stoul(argv[++i]);
+        if (value < videotrust::kLiveMinDurationSeconds ||
+            value > videotrust::kLiveMaxDurationSeconds) {
+          err = "--duration must be between 1 and 300 seconds";
+          return false;
+        }
+        out.duration_seconds = static_cast<unsigned>(value);
+        out.duration_set = true;
+      } catch (...) {
+        err = "--duration requires an integer between 1 and 300";
+        return false;
+      }
+    } else if (argument == "--ca") {
+      if (i + 1 >= argc) { err = "--ca requires a path"; return false; }
+      out.ca = argv[++i];
+    } else if (argument == "-h" || argument == "--help") {
+      Usage(std::cout);
+      std::exit(0);
+    } else if (argument.starts_with('-')) {
+      err = "unknown option: " + std::string(argument);
+      return false;
+    } else {
+      positionals.emplace_back(argument);
+    }
+  }
+  if (!out.codec.set) { err = "required --codec h264|h265"; return false; }
+  if (!out.duration_set) { err = "required --duration 1..300"; return false; }
+  if (out.summary_only && !out.jsonl) {
+    err = "--summary-only requires --jsonl";
+    return false;
+  }
+  if (positionals.size() != 1) {
+    err = "exactly one RTSP endpoint is required";
+    return false;
+  }
+  out.endpoint = positionals.front();
+  if (!out.endpoint.starts_with("rtsp://") || out.endpoint.size() > 2048 ||
+      out.endpoint.find_first_of("\r\n\t") != std::string::npos) {
+    err = "endpoint must be one bounded rtsp:// URL";
+    return false;
+  }
+  const std::size_t authority_end = out.endpoint.find('/', 7);
+  if (out.endpoint.substr(7, authority_end - 7).find('@') != std::string::npos) {
+    err = "credentials in the RTSP URL are forbidden";
+    return false;
+  }
+  const char* username = std::getenv("NANEXUS_RTSP_USERNAME");
+  const char* password = std::getenv("NANEXUS_RTSP_PASSWORD");
+  if ((username == nullptr) != (password == nullptr)) {
+    err = "RTSP username and password environment variables must be set together";
+    return false;
+  }
+  if (username) {
+    out.username = username;
+    out.password = password;
+    if (out.username.empty() || out.username.size() > 256 ||
+        out.password.empty() || out.password.size() > 256) {
+      err = "RTSP credentials exceed the fixed policy";
+      return false;
+    }
+  }
+  return true;
+}
+
+int RunLive(const LiveArgs& args) {
+#if !VIDEO_TRUST_HAS_GSTREAMER
+  (void)args;
+  std::cerr << "error: live RTSP support is unavailable in this build\n";
+  return 3;
+#else
+  auto validator = videotrust::IncrementalLiveValidator::Create(args.codec.codec);
+  if (!validator.ok()) { std::cerr << "error: live validator initialization failed\n"; return 3; }
+  if (!args.ca.empty()) {
+    const auto error = validator.value().SetTrustedCertificateFile(args.ca);
+    if (error.code != videotrust::ErrorCode::Ok) {
+      std::cerr << "error: trust configuration could not be loaded\n";
+      return 2;
+    }
+  }
+  videotrust::LiveContractRenderer renderer;
+  std::size_t event_count = 0;
+  auto emit_json = [&](const std::string& document, bool summary) {
+    if (document.size() > videotrust::kLiveMaxDocumentBytes) return false;
+    if (!args.summary_only || summary) std::cout << document;
+    ++event_count;
+    return true;
+  };
+  auto started = renderer.Start();
+  if (!started.ok() || (args.jsonl && !emit_json(started.value(), false))) return 3;
+  if (!args.jsonl) std::cout << "Nanexus live session started\n";
+  auto epoch = renderer.RenderObservation(validator.value().epoch_started());
+  if (!epoch.ok() || (args.jsonl && !emit_json(epoch.value(), false))) return 3;
+  if (!args.jsonl) {
+    std::cout << videotrust::RenderLiveObservationText(validator.value().epoch_started());
+  }
+  event_count = 2;
+  g_live_cancel_requested = 0;
+  std::signal(SIGINT, RequestLiveCancel);
+  std::signal(SIGTERM, RequestLiveCancel);
+  videotrust::LiveIngestOptions ingest{args.codec.codec, args.endpoint,
+                                       args.username, args.password,
+                                       args.duration_seconds};
+  auto ingest_result = videotrust::RunGStreamerLiveIngest(
+      ingest,
+      [&](const videotrust::NalUnit& nal) {
+        if (event_count >= videotrust::kLiveMaxEvents - 2) {
+          return videotrust::MakeError(videotrust::ErrorCode::InvalidArgument,
+                                       "live event limit reached");
+        }
+        auto observation = validator.value().AddNal(nal);
+        if (!observation.ok()) return observation.error();
+        if (observation.value()) {
+          auto rendered = renderer.RenderObservation(*observation.value());
+          if (!rendered.ok()) return rendered.error();
+          if (args.jsonl) {
+            if (!emit_json(rendered.value(), false)) {
+              return videotrust::MakeError(videotrust::ErrorCode::InvalidArgument,
+                                           "live document limit reached");
+            }
+          } else {
+            std::cout << videotrust::RenderLiveObservationText(*observation.value());
+            ++event_count;
+          }
+        }
+        return videotrust::Error{videotrust::ErrorCode::Ok, {}};
+      },
+      [] { return g_live_cancel_requested != 0; });
+  auto final_events = validator.value().EndEpoch(ingest_result.stop_reason);
+  if (!final_events.ok()) { std::cerr << "error: live session could not be finalized\n"; return 3; }
+  for (const auto& observation : final_events.value()) {
+    auto rendered = renderer.RenderObservation(observation);
+    if (!rendered.ok()) return 3;
+    if (args.jsonl) {
+      if (!emit_json(rendered.value(), false)) return 3;
+    } else {
+      std::cout << videotrust::RenderLiveObservationText(observation);
+      ++event_count;
+    }
+  }
+  auto summary = renderer.Finalize(ingest_result.stop_reason);
+  if (!summary.ok()) return 3;
+  if (args.jsonl) {
+    if (!emit_json(summary.value(), true)) return 3;
+  } else {
+    auto text = renderer.SummaryOnlyText();
+    if (!text.ok()) return 3;
+    std::cout << text.value();
+  }
+  if (ingest_result.error.code != videotrust::ErrorCode::Ok) {
+    std::cerr << "error: "
+              << ingest_result.error.message.substr(0, videotrust::kLiveMaxDiagnosticBytes)
+              << "\n";
+  }
+  return static_cast<int>(videotrust::ExitCodeForLive(
+      validator.value().semantic().closed_summary(),
+      validator.value().semantic().tail_state(), ingest_result.stop_reason));
+#endif
 }
 
 bool ParseCompareArgs(int argc, char** argv, CompareArgs& out, std::string& err) {
@@ -582,6 +780,15 @@ int main(int argc, char** argv) {
     }
     return RunInspect(args);
   }
+  if (cmd == "verify-live") {
+    LiveArgs args;
+    if (!ParseLiveArgs(argc, argv, args, err)) {
+      std::cerr << "error: " << err << "\n";
+      Usage(std::cerr);
+      return static_cast<int>(videotrust::ExitCode::UsageOrInputError);
+    }
+    return RunLive(args);
+  }
   if (cmd == "compare-preservation") {
     CompareArgs args;
     if (!ParseCompareArgs(argc, argv, args, err)) {
@@ -610,8 +817,8 @@ int main(int argc, char** argv) {
     return RunTamper(args);
   }
 
-  std::cerr << "error: unknown subcommand (use verify, inspect, compare-preservation, "
-               "sign, or tamper)\n";
+  std::cerr << "error: unknown subcommand (use verify, inspect, verify-live, "
+               "compare-preservation, sign, or tamper)\n";
   Usage(std::cerr);
   return static_cast<int>(videotrust::ExitCode::UsageOrInputError);
 }

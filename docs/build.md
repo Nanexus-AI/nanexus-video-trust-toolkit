@@ -16,7 +16,8 @@ tagged release.
 
 ```bash
 sudo apt-get install -y build-essential pkg-config meson ninja-build \
-  libssl-dev ffmpeg git ca-certificates python3-jsonschema
+  libssl-dev libgstreamer1.0-dev libgstreamer-plugins-base1.0-dev \
+  gstreamer1.0-plugins-good ffmpeg git ca-certificates python3-jsonschema
 ```
 
 * **ffmpeg** is used by test fixture generation (not required to run a
@@ -26,6 +27,9 @@ sudo apt-get install -y build-essential pkg-config meson ninja-build \
   It is a test/development dependency and is not required to run a pre-built
   `video-trust` binary against media.
 * **OpenSSL 3.x** via `libssl-dev` / `pkg-config openssl`.
+* `verify-live` dynamically links the LGPL GStreamer core/app libraries and
+  uses the LGPL `rtspsrc` and RTP depayloader plugins from plugins-good. No
+  GStreamer binary is vendored and no GPL-only plugin is required.
 
 ## ONVIF dependency
 
@@ -55,6 +59,10 @@ meson compile -C build/nanexus
 meson test -C build/nanexus
 meson install -C build/nanexus   # installs video-trust (typically to /usr/local/bin)
 ```
+
+Use `-Dlive_rtsp=enabled` to require live support at configure time or
+`-Dlive_rtsp=disabled` for a finite-file-only build. The default `auto` enables
+it when both `gstreamer-1.0` and `gstreamer-app-1.0` are available.
 
 `oms_prefix` points Meson at the ONVIF headers and shared library. The link uses
 an rpath to that prefix for local runs.

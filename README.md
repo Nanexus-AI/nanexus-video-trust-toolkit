@@ -257,6 +257,7 @@ The Agent package depends on Pydantic and the MCP Python SDK, both MIT.
 * [`docs/json-v0.1.md`](docs/json-v0.1.md) — JSON `schema_version` 0.1
 * [`docs/inspection-v0.1.md`](docs/inspection-v0.1.md) — inspect text/JSON contract
 * [`docs/preservation-v0.1.md`](docs/preservation-v0.1.md) — preservation text/JSON contract
+* [`docs/live-contract-v0.1.md`](docs/live-contract-v0.1.md) — live JSONL contract
 * [`docs/m3-frigate-case-study.md`](docs/m3-frigate-case-study.md) — sanitized, configuration-scoped M3 field result
 * [`docs/schemas/media-signing-inspection-0.1.json`](docs/schemas/media-signing-inspection-0.1.json) — formal inspection JSON Schema
 * [`docs/schemas/media-signing-preservation-assessment-0.1.json`](docs/schemas/media-signing-preservation-assessment-0.1.json) — formal preservation JSON Schema

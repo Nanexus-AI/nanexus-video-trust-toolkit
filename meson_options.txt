@@ -4,3 +4,10 @@ option(
   value: '',
   description: 'Install prefix of pinned media-signing-framework (default: <srcdir>/.oms-prefix)',
 )
+
+option(
+  'live_rtsp',
+  type: 'feature',
+  value: 'auto',
+  description: 'Build bounded RTSP/TCP verify-live support with system GStreamer',
+)

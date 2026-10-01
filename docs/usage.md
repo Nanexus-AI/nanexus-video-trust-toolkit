@@ -1,11 +1,51 @@
-# File-based CLI usage
+# CLI usage
 
-Experimental / pre-release. Annex-B elementary streams only (not MP4/MKV/RTSP).
+Experimental / pre-release. File commands use Annex-B elementary streams;
+`verify-live` is the separate bounded RTSP/TCP reference-lab command.
 
 M1 signing is a **reference-lab** operation. Valid signatures and certificate
 checks do **not** establish camera/source authenticity.
 
 ## Commands
+
+### Verify a bounded live stream
+
+```bash
+video-trust verify-live --codec h264 --duration 30 --ca ca.pem \
+  --jsonl rtsp://camera.example/stream
+```
+
+Credentials are never accepted in the URL. Set both
+`NANEXUS_RTSP_USERNAME` and `NANEXUS_RTSP_PASSWORD` in the process environment
+when authentication is required; setting only one is rejected. Values are
+passed directly to `rtspsrc` and are never included in public output.
+
+`--duration` is required and accepts 1–300 seconds. `--jsonl` emits the live
+0.1 contract; `--summary-only` requires JSONL and suppresses intermediate
+presentation without changing the terminal summary. Human output is the
+default.
+
+Fixed bounds are: 5-second connection and read-stall bounds, two non-dropping
+AppSink buffers, 8 MiB per sample, 1,024 contract events, 64 KiB per JSON
+document, 160 bytes per stable diagnostic, and a 2-second shutdown grace
+policy. Reaching a resource bound ends the epoch as `resource_limit` and emits
+the summary when safe finalization succeeds.
+
+Exit precedence is definitive invalid evidence (`1`), operational failure
+(`3`), unsigned/not-verifiable/unresolved evidence (`4`), then successful
+bounded completion (`0`). CLI and policy errors are `2`. Thus later transport
+failure cannot hide invalid evidence, and transport failure is never reported
+as signature invalidity.
+
+The fixed graph is `rtspsrc` over TCP, one codec-specific RTP depayloader,
+fixed byte-stream/access-unit caps, and a bounded non-dropping `appsink`. There
+is no reconnect, decode, encode, conversion, muxing, recording, arbitrary
+pipeline, or arbitrary GStreamer option. Only one explicitly selected H.264 or
+H.265 video stream is supported.
+
+Live valid evidence does not establish source authenticity. Joining does not
+establish prior coverage, preservation is not assessed, and an unresolved tail
+is not corruption. This command is not a production monitor or service.
 
 ### Sign
 

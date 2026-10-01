@@ -233,6 +233,24 @@ int main(int argc, char** argv) {
       std::string::npos) {
     return Fail("human observation rendering");
   }
+  ClosedEvidenceSummary exits;
+  exits.valid = 1;
+  if (ExitCodeForLive(exits, LiveTailState::NoPendingTail,
+                      LiveStopReason::DeadlineReached) != ExitCode::Success ||
+      ExitCodeForLive(exits, LiveTailState::EndedWithUnresolvedTail,
+                      LiveStopReason::DeadlineReached) !=
+          ExitCode::UnsignedOrNotVerifiable ||
+      ExitCodeForLive(exits, LiveTailState::NoPendingTail,
+                      LiveStopReason::TransportFailure) !=
+          ExitCode::RuntimeFailure) {
+    return Fail("live exit precedence");
+  }
+  exits.invalid = 1;
+  if (ExitCodeForLive(exits, LiveTailState::EndedWithUnresolvedTail,
+                      LiveStopReason::TransportFailure) !=
+      ExitCode::VerificationNegative) {
+    return Fail("invalid evidence exit precedence");
+  }
   LiveContractRenderer privacy;
   if (privacy.Start({"rtsp://user:pass@private", std::nullopt}).ok()) {
     return Fail("sensitive runtime metadata accepted");
