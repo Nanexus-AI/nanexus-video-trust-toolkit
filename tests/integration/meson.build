@@ -39,6 +39,31 @@ test_preservation_fixtures = executable(
   install: false,
 )
 
+verify_runner = find_program('bash')
+
+test_live_incremental = executable(
+  'test_live_incremental',
+  'test_live_incremental.cpp',
+  dependencies: videotrust_dep,
+  install: false,
+)
+
+test(
+  'live_incremental_integration',
+  verify_runner,
+  args: [
+    '-lc',
+    'set -euo pipefail; '
+    + 'OMS_SIGN_ANNEXB="' + oms_sign_annexb.full_path() + '" '
+    + '"' + gen_script + '" "' + fixture_dir + '"; '
+    + '"' + test_live_incremental.full_path() + '" '
+    + '"' + fixture_dir + '"',
+  ],
+  depends: [oms_sign_annexb, test_live_incremental],
+  timeout: 180,
+  is_parallel: false,
+)
+
 python = import('python').find_installation('python3')
 inspect_test_script = meson.project_source_root() / 'tests/integration/test_inspect_cli.py'
 inspection_schema = meson.project_source_root() / 'docs/schemas/media-signing-inspection-0.1.json'
@@ -48,8 +73,6 @@ preservation_matrix_script = meson.project_source_root() / 'tests/tools/run_pres
 preservation_matrix_manifest = meson.project_source_root() / 'tests/fixtures/preservation-matrix.json'
 ffmpeg = find_program('ffmpeg', required: false)
 ffprobe = find_program('ffprobe', required: false)
-
-verify_runner = find_program('bash')
 
 test(
   'verify_integration',

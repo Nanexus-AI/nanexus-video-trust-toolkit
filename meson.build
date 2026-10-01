@@ -80,6 +80,7 @@ videotrust_core = static_library(
     'src/core/nal_classify.cpp',
     'src/core/preservation.cpp',
     'src/core/result.cpp',
+    'src/live/live.cpp',
     'src/render/render.cpp',
     'src/signing/sign.cpp',
     'src/tamper/tamper.cpp',

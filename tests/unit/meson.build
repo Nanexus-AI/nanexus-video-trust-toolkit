@@ -5,6 +5,13 @@ test_session = executable(
 )
 test('session_lifecycle', test_session)
 
+test_live = executable(
+  'test_live',
+  'test_live.cpp',
+  dependencies: videotrust_dep,
+)
+test('live_semantic_model', test_live)
+
 test_mapping = executable(
   'test_mapping',
   'test_mapping.cpp',
