@@ -1,0 +1,147 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "urn:nanexus:schema:media-signing-live-session-event:0.1",
+  "title": "Nanexus Media Signing Live Session Event 0.1",
+  "type": "object",
+  "unevaluatedProperties": false,
+  "required": ["document_type", "schema_version", "event_type", "sequence"],
+  "properties": {
+    "document_type": { "const": "media_signing_live_session_event" },
+    "schema_version": { "const": "0.1" },
+    "event_type": { "enum": ["session_started", "epoch_started", "verification_observation", "epoch_ended", "session_summary"] },
+    "sequence": { "$ref": "#/$defs/uint64" },
+    "runtime": { "$ref": "#/$defs/runtime" }
+  },
+  "oneOf": [
+    { "$ref": "#/$defs/session_started" },
+    { "$ref": "#/$defs/epoch_started" },
+    { "$ref": "#/$defs/verification_observation" },
+    { "$ref": "#/$defs/epoch_ended" },
+    { "$ref": "#/$defs/session_summary" }
+  ],
+  "$defs": {
+    "uint64": { "type": "integer", "minimum": 0, "maximum": 18446744073709551615 },
+    "uint32": { "type": "integer", "minimum": 0, "maximum": 4294967295 },
+    "epoch": { "type": "integer", "minimum": 1, "maximum": 4294967295 },
+    "codec": { "enum": ["h264", "h265"] },
+    "tail_active": { "enum": ["awaiting_evidence", "no_pending_tail", "open_pending"] },
+    "tail_final": { "enum": ["no_pending_tail", "ended_with_unresolved_tail"] },
+    "stop_reason": { "enum": ["orderly_end", "caller_cancelled", "deadline_reached", "transport_failure", "resource_limit", "reset", "reconfigured"] },
+    "runtime": {
+      "type": "object",
+      "additionalProperties": false,
+      "minProperties": 1,
+      "properties": {
+        "session_id": { "type": "string", "minLength": 1, "maxLength": 64, "pattern": "^[A-Za-z0-9._-]+$" },
+        "observed_at": { "type": "string", "minLength": 1, "maxLength": 40, "pattern": "^[0-9T.Z:+-]+$" }
+      }
+    },
+    "finding": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["code", "severity"],
+      "properties": {
+        "code": { "enum": ["AUTH_NOT_OK", "PROVENANCE_NOT_OK", "PROVENANCE_WITHOUT_TRUSTED", "SIGNING_KEY_PROVENANCE_OK"] },
+        "severity": { "const": "info" }
+      }
+    },
+    "findings": { "type": "array", "maxItems": 16, "uniqueItems": true, "items": { "$ref": "#/$defs/finding" } },
+    "limitation": { "enum": ["source_authenticity_not_established", "pre_connection_coverage_not_established", "cross_epoch_continuity_not_established", "preservation_not_assessed", "rtsp_tcp_single_stream_scope"] },
+    "limitations": { "type": "array", "minItems": 4, "maxItems": 5, "uniqueItems": true, "items": { "$ref": "#/$defs/limitation" } },
+    "closed_summary": {
+      "type": "object", "additionalProperties": false,
+      "required": ["valid", "invalid", "unsigned", "not_verifiable"],
+      "properties": {
+        "valid": { "$ref": "#/$defs/uint64" }, "invalid": { "$ref": "#/$defs/uint64" },
+        "unsigned": { "$ref": "#/$defs/uint64" }, "not_verifiable": { "$ref": "#/$defs/uint64" }
+      }
+    },
+    "official_counts": {
+      "type": "object", "additionalProperties": false,
+      "required": ["received_nalus", "validated_nalus", "pending_nalus", "received_frames", "validated_frames", "pending_frames"],
+      "properties": {
+        "received_nalus": { "$ref": "#/$defs/uint32" }, "validated_nalus": { "$ref": "#/$defs/uint32" },
+        "pending_nalus": { "$ref": "#/$defs/uint32" }, "received_frames": { "$ref": "#/$defs/uint32" },
+        "validated_frames": { "$ref": "#/$defs/uint32" }, "pending_frames": { "$ref": "#/$defs/uint32" }
+      }
+    },
+    "closed_evidence": {
+      "type": "object", "additionalProperties": false,
+      "required": ["outcome", "media_signing", "signature_integrity", "continuity", "verification_completeness", "certificate_status", "source_authenticity", "public_key_has_changed", "newly_validated_nalus", "newly_validated_frames", "accumulated_validated_nalus", "accumulated_validated_frames", "findings"],
+      "properties": {
+        "outcome": { "enum": ["valid", "invalid", "unsigned", "not_verifiable"] },
+        "media_signing": { "enum": ["not_detected", "detected"] },
+        "signature_integrity": { "enum": ["not_applicable", "not_feasible", "ok", "ok_with_missing_info", "not_ok", "version_mismatch"] },
+        "continuity": { "enum": ["not_applicable", "intact", "missing_info", "broken"] },
+        "verification_completeness": { "enum": ["complete", "incomplete", "not_feasible"] },
+        "certificate_status": { "enum": ["not_provided", "not_feasible", "not_ok", "ok", "feasible_without_trusted"] },
+        "source_authenticity": { "const": "not_established" },
+        "public_key_has_changed": { "type": "boolean" },
+        "newly_validated_nalus": { "$ref": "#/$defs/uint32" }, "newly_validated_frames": { "$ref": "#/$defs/uint32" },
+        "accumulated_validated_nalus": { "$ref": "#/$defs/uint32" }, "accumulated_validated_frames": { "$ref": "#/$defs/uint32" },
+        "findings": { "$ref": "#/$defs/findings" }
+      },
+      "oneOf": [
+        { "properties": { "outcome": { "const": "valid" }, "media_signing": { "const": "detected" }, "signature_integrity": { "const": "ok" } } },
+        { "properties": { "outcome": { "const": "invalid" }, "media_signing": { "const": "detected" }, "signature_integrity": { "enum": ["not_ok", "version_mismatch"] } } },
+        { "properties": { "outcome": { "const": "unsigned" }, "media_signing": { "const": "not_detected" }, "signature_integrity": { "const": "not_applicable" }, "newly_validated_nalus": { "const": 0 }, "newly_validated_frames": { "const": 0 }, "accumulated_validated_nalus": { "const": 0 }, "accumulated_validated_frames": { "const": 0 } } },
+        { "properties": { "outcome": { "const": "not_verifiable" }, "signature_integrity": { "enum": ["not_feasible", "ok_with_missing_info"] } } }
+      ]
+    },
+    "session_started": {
+      "properties": {
+        "event_type": { "const": "session_started" }, "source_authenticity": { "const": "not_established" },
+        "limitations": { "$ref": "#/$defs/limitations" }
+      },
+      "required": ["source_authenticity", "limitations"]
+    },
+    "epoch_started": {
+      "properties": { "event_type": { "const": "epoch_started" }, "epoch": { "$ref": "#/$defs/epoch" }, "codec": { "$ref": "#/$defs/codec" }, "tail_state": { "const": "awaiting_evidence" } },
+      "required": ["epoch", "codec", "tail_state"]
+    },
+    "verification_observation": {
+      "properties": {
+        "event_type": { "const": "verification_observation" }, "epoch": { "$ref": "#/$defs/epoch" }, "codec": { "$ref": "#/$defs/codec" },
+        "tail_state": { "$ref": "#/$defs/tail_active" }, "material_change": { "const": true },
+        "closed_evidence": { "oneOf": [{ "type": "null" }, { "$ref": "#/$defs/closed_evidence" }] },
+        "closed_summary": { "$ref": "#/$defs/closed_summary" }, "official_counts": { "$ref": "#/$defs/official_counts" }
+      },
+      "required": ["epoch", "codec", "tail_state", "material_change", "closed_evidence", "closed_summary", "official_counts"],
+      "allOf": [
+        { "if": { "properties": { "tail_state": { "const": "open_pending" } }, "required": ["tail_state"] }, "then": { "properties": { "official_counts": { "anyOf": [{ "properties": { "pending_nalus": { "minimum": 1 } } }, { "properties": { "pending_frames": { "minimum": 1 } } }] } } } },
+        { "if": { "properties": { "tail_state": { "const": "no_pending_tail" } }, "required": ["tail_state"] }, "then": { "properties": { "official_counts": { "properties": { "pending_nalus": { "const": 0 }, "pending_frames": { "const": 0 } } } } } }
+      ]
+    },
+    "epoch_ended": {
+      "properties": {
+        "event_type": { "const": "epoch_ended" }, "epoch": { "$ref": "#/$defs/epoch" }, "codec": { "$ref": "#/$defs/codec" },
+        "tail_state": { "$ref": "#/$defs/tail_final" }, "material_change": { "const": true }, "stop_reason": { "$ref": "#/$defs/stop_reason" },
+        "closed_evidence": { "oneOf": [{ "type": "null" }, { "$ref": "#/$defs/closed_evidence" }] },
+        "closed_summary": { "$ref": "#/$defs/closed_summary" }, "official_counts": { "$ref": "#/$defs/official_counts" }
+      },
+      "required": ["epoch", "codec", "tail_state", "material_change", "stop_reason", "closed_evidence", "closed_summary", "official_counts"],
+      "allOf": [
+        { "if": { "properties": { "tail_state": { "const": "ended_with_unresolved_tail" } }, "required": ["tail_state"] }, "then": { "properties": { "official_counts": { "anyOf": [{ "properties": { "pending_nalus": { "minimum": 1 } } }, { "properties": { "pending_frames": { "minimum": 1 } } }] } } }, "else": { "properties": { "official_counts": { "properties": { "pending_nalus": { "const": 0 }, "pending_frames": { "const": 0 } } } } } }
+      ]
+    },
+    "session_summary": {
+      "properties": {
+        "event_type": { "const": "session_summary" }, "stop_reason": { "$ref": "#/$defs/stop_reason" }, "epoch_count": { "$ref": "#/$defs/epoch" },
+        "codecs": { "type": "array", "minItems": 1, "maxItems": 2, "uniqueItems": true, "items": { "$ref": "#/$defs/codec" } },
+        "totals": { "type": "object", "additionalProperties": false, "required": ["received_nalus", "validated_nalus", "received_frames", "validated_frames"], "properties": { "received_nalus": { "$ref": "#/$defs/uint64" }, "validated_nalus": { "$ref": "#/$defs/uint64" }, "received_frames": { "$ref": "#/$defs/uint64" }, "validated_frames": { "$ref": "#/$defs/uint64" } } },
+        "closed_observation_count": { "$ref": "#/$defs/uint64" }, "closed_summary": { "$ref": "#/$defs/closed_summary" },
+        "worst_closed_outcome": { "oneOf": [{ "type": "null" }, { "enum": ["valid", "invalid", "unsigned", "not_verifiable"] }] },
+        "final_tail_state": { "$ref": "#/$defs/tail_final" }, "unresolved_tail": { "type": "boolean" },
+        "boundary_counts": { "type": "object", "additionalProperties": false, "required": ["transport_failures", "resets", "reconfigurations"], "properties": { "transport_failures": { "$ref": "#/$defs/uint64" }, "resets": { "$ref": "#/$defs/uint64" }, "reconfigurations": { "$ref": "#/$defs/uint64" } } },
+        "certificate_status": { "enum": ["not_provided", "not_feasible", "not_ok", "ok", "feasible_without_trusted"] },
+        "source_authenticity": { "const": "not_established" }, "cross_epoch_continuity": { "const": "not_established" },
+        "findings": { "$ref": "#/$defs/findings" }, "limitations": { "$ref": "#/$defs/limitations" }
+      },
+      "required": ["stop_reason", "epoch_count", "codecs", "totals", "closed_observation_count", "closed_summary", "worst_closed_outcome", "final_tail_state", "unresolved_tail", "boundary_counts", "certificate_status", "source_authenticity", "cross_epoch_continuity", "findings", "limitations"],
+      "allOf": [
+        { "if": { "properties": { "final_tail_state": { "const": "ended_with_unresolved_tail" } }, "required": ["final_tail_state"] }, "then": { "properties": { "unresolved_tail": { "const": true } } }, "else": { "properties": { "unresolved_tail": { "const": false } } } },
+        { "if": { "properties": { "epoch_count": { "minimum": 2 } }, "required": ["epoch_count"] }, "then": { "properties": { "limitations": { "contains": { "const": "cross_epoch_continuity_not_established" } } } } }
+      ]
+    }
+  }
+}

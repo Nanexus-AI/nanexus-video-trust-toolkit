@@ -5,12 +5,31 @@ test_session = executable(
 )
 test('session_lifecycle', test_session)
 
+python = import('python').find_installation('python3')
+
 test_live = executable(
   'test_live',
   'test_live.cpp',
   dependencies: videotrust_dep,
 )
 test('live_semantic_model', test_live)
+
+test_live_contract = executable(
+  'test_live_contract',
+  'test_live_contract.cpp',
+  dependencies: videotrust_dep,
+)
+test('live_contract_rendering', test_live_contract)
+
+test(
+  'live_contract_json_schema',
+  python,
+  args: [
+    meson.project_source_root() / 'tests/contract/test_live_schema.py',
+    meson.project_source_root() / 'docs/schemas/media-signing-live-session-event-0.1.json',
+    test_live_contract.full_path(),
+  ],
+)
 
 test_mapping = executable(
   'test_mapping',
@@ -68,7 +87,6 @@ test_render = executable(
 )
 test('render_text_json', test_render)
 
-python = import('python').find_installation('python3')
 test(
   'inspection_json_schema',
   python,
