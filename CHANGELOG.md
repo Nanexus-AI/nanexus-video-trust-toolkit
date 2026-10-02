@@ -21,7 +21,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   Frigate case study
 - M4 bounded one-stream H.264/H.265 RTSP/TCP verification, live JSON Lines
   contract and schema, synthetic validation matrix, and configuration-scoped
-  Frigate/go2rtc case study; complete locally and awaiting publication decision
+  Frigate/go2rtc case study; complete and published on current `main`, without
+  a new tag or GitHub release
 - Experimental Agent interface on `main` (not a release tag): Python capability
   layer, read-only MCP stdio tools `video_trust.verify_file`,
   `video_trust.assess_video_integrity`, and
