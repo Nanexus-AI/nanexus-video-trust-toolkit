@@ -7,10 +7,21 @@ ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 SRC="${ROOT}/third_party/media-signing-framework"
 PREFIX="${OMS_PREFIX:-${ROOT}/.oms-prefix}"
 BUILD_DIR="${OMS_BUILD_DIR:-${ROOT}/build/oms}"
+PATCH_FILE="${ROOT}/patches/media-signing-framework-r25.12.6-reject-undefined-tlv.patch"
 
 if [[ ! -f "${SRC}/meson.build" ]]; then
   echo "FAIL: upstream not found at ${SRC}" >&2
   echo "Run: ./scripts/fetch-upstream.sh" >&2
+  exit 1
+fi
+
+if git -C "${SRC}" apply --reverse --check "${PATCH_FILE}" 2>/dev/null; then
+  echo "PASS: local undefined-TLV hardening patch already applied"
+elif git -C "${SRC}" apply --check "${PATCH_FILE}"; then
+  git -C "${SRC}" apply "${PATCH_FILE}"
+  echo "PASS: applied local undefined-TLV hardening patch"
+else
+  echo "FAIL: undefined-TLV hardening patch does not apply cleanly" >&2
   exit 1
 fi
 

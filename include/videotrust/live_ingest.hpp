@@ -21,6 +21,10 @@ inline constexpr std::size_t kLiveMaxEvents = 1024;
 inline constexpr std::size_t kLiveMaxDocumentBytes = 64 * 1024;
 inline constexpr std::size_t kLiveMaxDiagnosticBytes = 160;
 
+constexpr bool LiveSampleSizeWithinBound(std::size_t size) noexcept {
+  return size > 0 && size <= kLiveMaxSampleBytes;
+}
+
 struct LiveIngestOptions {
   Codec codec{Codec::H264};
   std::string endpoint;

@@ -1,4 +1,5 @@
 #include "videotrust/live.hpp"
+#include "videotrust/live_ingest.hpp"
 
 #include <iostream>
 #include <optional>
@@ -75,6 +76,14 @@ std::vector<std::string> DeterministicTrace() {
 
 int main() {
   using namespace videotrust;
+
+  if (!LiveSampleSizeWithinBound(kLiveMaxSampleBytes - 1) ||
+      !LiveSampleSizeWithinBound(kLiveMaxSampleBytes) ||
+      LiveSampleSizeWithinBound(kLiveMaxSampleBytes + 1) ||
+      LiveSampleSizeWithinBound(kLiveMaxSampleBytes + 1024 * 1024) ||
+      LiveSampleSizeWithinBound(0)) {
+    return Fail("live sample size boundary");
+  }
 
   LiveSemanticModel model;
   auto started = model.BeginEpoch(Codec::H264);

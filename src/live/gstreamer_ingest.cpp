@@ -169,7 +169,7 @@ LiveIngestResult RunGStreamerLiveIngest(const LiveIngestOptions& options,
     ++result.samples;
     GstBuffer* buffer = gst_sample_get_buffer(sample);
     const gsize size = gst_buffer_get_size(buffer);
-    if (size == 0 || size > kLiveMaxSampleBytes) {
+    if (!LiveSampleSizeWithinBound(size)) {
       gst_sample_unref(sample);
       result.stop_reason = LiveStopReason::ResourceLimit;
       result.error = MakeError(ErrorCode::InvalidArgument,

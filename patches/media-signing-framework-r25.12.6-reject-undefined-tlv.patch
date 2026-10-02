@@ -1,0 +1,13 @@
+diff --git a/lib/src/oms_tlv.c b/lib/src/oms_tlv.c
+index d666c65..226a1b6 100644
+--- a/lib/src/oms_tlv.c
++++ b/lib/src/oms_tlv.c
+@@ -1082,7 +1082,7 @@ decode_tlv_header(const uint8_t *data,
+   oms_tlv_tag_t tag_from_data = (oms_tlv_tag_t)(*data_ptr++);
+   *data_bytes_read = 0;
+   oms_tlv_tuple_t tlv = get_tlv_tuple(tag_from_data);
+-  if (tlv.tag != tag_from_data) {
++  if (tag_from_data == UNDEFINED_TAG || tlv.tag != tag_from_data) {
+     DEBUG_LOG("Parsed an invalid tag (%d) in the data", tag_from_data);
+     return OMS_INVALID_PARAMETER;
+   }

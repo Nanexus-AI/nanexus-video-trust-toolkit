@@ -156,6 +156,32 @@ int CheckInvalid(const fs::path& path, Codec codec, const char* label) {
   return 0;
 }
 
+int CheckUndefinedTlvRejected(const fs::path& path) {
+  auto nalus = AnnexBReader::ParseFile(path.string());
+  if (!nalus.ok()) return Fail("undefined TLV fixture parse");
+  auto validator = IncrementalLiveValidator::Create(Codec::H264);
+  if (!validator.ok()) return Fail("undefined TLV validator create");
+  for (const auto& nal : nalus.value()) {
+    auto event = validator.value().AddNal(nal);
+    if (!event.ok()) return Fail("undefined TLV signed prefix");
+  }
+  const NalUnit undefined_tlv_sei{
+      {0x00, 0x00, 0x00, 0x01, 0x06, 0x05, 0x13,
+       0x00, 0x5b, 0xc9, 0x3f, 0x2d, 0x71, 0x5e, 0x95,
+       0xad, 0xa4, 0x79, 0x6f, 0x90, 0x87, 0x7a, 0x6f,
+       0x00, 0x00, 0x03, 0x00, 0x80},
+      4};
+  auto malformed = validator.value().AddNal(undefined_tlv_sei);
+  const NalUnit next_gop{{0x00, 0x00, 0x00, 0x01, 0x65, 0x80,
+                          0xff, 0x00, 0x80},
+                         4};
+  if (malformed.ok()) malformed = validator.value().AddNal(next_gop);
+  if (malformed.ok() || malformed.error().code != ErrorCode::UpstreamFailure) {
+    return Fail("undefined TLV tag was not rejected");
+  }
+  return 0;
+}
+
 }  // namespace
 
 int main(int argc, char** argv) {
@@ -172,7 +198,8 @@ int main(int argc, char** argv) {
       CheckUnsigned(root / "h265/unsigned.h265", Codec::H265,
                     "h265-unsigned") ||
       CheckInvalid(root / "h264/tampered.h264", Codec::H264,
-                   "h264-invalid")) {
+                   "h264-invalid") ||
+      CheckUndefinedTlvRejected(root / "h264/signed.h264")) {
     return 1;
   }
   std::cout << "PASS: incremental live validator\n";

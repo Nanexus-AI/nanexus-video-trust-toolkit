@@ -26,6 +26,16 @@ Do **not** confuse:
 * Prefer a **stable official release/tag** for M0 reproducibility. Unreleased `26.6.1` was **not** required for the planned M0 sign/verify/tamper path.
 * **Rejected alternatives:** pin to untagged `HEAD` / `26.6.1` solely because it is newer; pin to older `v1.0.2` (superseded by `r25.12.x` calendar releases).
 
+### Local hardening patch
+
+The pinned `r25.12.6` source is built with
+`patches/media-signing-framework-r25.12.6-reject-undefined-tlv.patch`.
+It rejects the reserved `UNDEFINED_TAG` before decoder dispatch; without that
+check, malformed signing SEI data containing literal tag zero can call the
+sentinel tuple's null decoder. The patch is intentionally local and minimal so
+the approved release pin remains reproducible while awaiting an upstream
+release containing equivalent validation.
+
 ## Build system
 
 * Build tools: **Meson** (tool, `>= 0.49`) + **Ninja**
