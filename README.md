@@ -31,7 +31,7 @@ M1 File-based reference lab: Complete — v0.1.0 first developer release
 M1.5 Agent interface:        Experimental, on main (not a stable API)
 M2 Inspect + Report:         Implemented on current main (not a tagged release)
 M3 VMS/NVR preservation:    Complete — published on current main (not a tagged release)
-M4 Passive live RTSP:       Implemented + scoped validation on local main; closure pending
+M4 Passive live RTSP:       Complete locally; awaiting publication decision
 Stable production release:   None
 ```
 
@@ -234,8 +234,8 @@ repository. See [`docs/architecture.md`](docs/architecture.md).
 
 `v0.1.0` is the published file-based reference lab. Current `main` also contains
 the experimental M1.5 Agent interface, M2 inspect/report work, completed M3
-preservation work, and locally implemented/scoped-validated M4 passive RTSP
-work awaiting final closure; none is a new tagged release. Later milestones
+preservation work, and completed local M4 passive RTSP work awaiting a
+publication decision; none is a new tagged release. Later milestones
 continue with edge and integration work. Each milestone also reviews whether a
 new domain capability should appear to an Agent; M2 did not add Agent exposure,
 while M3 adds the preservation comparison primitive.

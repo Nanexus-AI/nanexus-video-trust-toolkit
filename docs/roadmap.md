@@ -20,7 +20,7 @@ framework/standard. It is **not** an official ONVIF project.
 | **M1.5** | Experimental Agent interface | **Implemented on `main`** — not a stable API or a tagged release |
 | **M2** | Inspect + Report | **Implemented on current `main`** — unreleased; not a tagged release |
 | **M3** | VMS/NVR Preservation Testing | **Complete and published on current `main`** — not a tagged release |
-| **M4** | Passive Live RTSP Verification | **Implemented and scoped validation completed locally** — awaiting M4-G closure; unpublished |
+| **M4** | Passive Live RTSP Verification | **Complete locally** — awaiting publication decision; unpublished |
 | **M5** | ARM64 / Edge Deployment | Planned |
 | **M6** | Integration Layer | Planned |
 | **M7** | Optional Legacy Signing Gateway | Planned |
@@ -88,9 +88,10 @@ compatibility claim. See [`m3-frigate-case-study.md`](m3-frigate-case-study.md).
 
 The Agent catalog adds one approved read-only L1 primitive,
 `video_trust.compare_preservation`, while preserving the two existing tool
-contracts. M3 does not add live RTSP verification; that remains M4 work.
+contracts. M3 itself did not add live RTSP verification; that capability was
+delivered separately in M4.
 
-## M4 — Passive Live RTSP Verification (awaiting closure)
+## M4 — Passive Live RTSP Verification (complete locally)
 
 Adds one-stream, bounded H.264/H.265 RTSP/TCP verification through a fixed
 GStreamer ingest graph and a separate live JSON Lines contract. Synthetic
@@ -100,14 +101,14 @@ configuration and do not establish generic camera/server compatibility,
 source identity, full coverage, preservation, or production readiness. See
 [`m4-frigate-live-case-study.md`](m4-frigate-live-case-study.md).
 
-M4 remains unarchived and unpublished pending its final M4-G regression,
-publication audit, history review, and coordinator decision. M5 ARM64/edge and
-gateway work are separate milestones.
+M4 completed its final regression, publication audit, and history review. It
+remains unarchived and unpublished pending a coordinator publication decision.
+M5 ARM64/edge and gateway work are separate milestones.
 
 ## Later milestones (summary)
 
 * **M3** — finite stored/exported-media preservation assessment (complete on current `main`)
-* **M4** — passive live RTSP verification
+* **M4** — passive live RTSP verification (complete locally; unpublished)
 * **M5** — ARM64 / edge deployment (e.g. RK3588 / Jetson class targets)
 * **M6** — integration layer for adjacent systems
 * **M7** — optional gateway for legacy signing environments
