@@ -26,8 +26,8 @@ gst_app_dep = dependency('gstreamer-app-1.0', version: '>=1.24',
 live_rtsp_enabled = gst_dep.found() and gst_app_dep.found()
 
 oms_lib_candidates = [
+  oms_prefix / get_option('libdir'),
   oms_prefix / 'lib',
-  oms_prefix / 'lib' / 'x86_64-linux-gnu',
   oms_prefix / 'lib64',
 ]
 
