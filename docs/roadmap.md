@@ -6,9 +6,9 @@ High-level milestone picture for Nanexus Video Trust Toolkit.
 **Stable end-user release:** none yet.  
 **Current published developer release:** **M1 / `v0.1.0`** (Pre-release).
 
-M1.5 and M2 are implemented in current `main` development history. M3 is
-complete and published on current `main`. None is part of the `v0.1.0` tag or
-implies that a later release exists.
+M1.5 and M2 are implemented in current `main` development history. M3 through
+M5 are complete and published on current `main`. None is part of the `v0.1.0`
+tag or implies that a later release exists.
 
 This is an independent open-source project using the ONVIF Media Signing
 framework/standard. It is **not** an official ONVIF project.
@@ -21,7 +21,7 @@ framework/standard. It is **not** an official ONVIF project.
 | **M2** | Inspect + Report | **Implemented on current `main`** — unreleased; not a tagged release |
 | **M3** | VMS/NVR Preservation Testing | **Complete and published on current `main`** — not a tagged release |
 | **M4** | Passive Live RTSP Verification | **Complete and published on current `main`** — not a tagged release |
-| **M5** | ARM64 / Edge Deployment | Planned |
+| **M5** | ARM64 / Edge Deployment | **Complete and published on current `main`** — scoped Jetson validation; not a tagged release |
 | **M6** | Integration Layer | Planned |
 | **M7** | Optional Legacy Signing Gateway | Planned |
 | **M8** | Native Media Signing Camera | Planned |
@@ -103,14 +103,27 @@ source identity, full coverage, preservation, or production readiness. See
 
 M4 completed its final regression, publication audit, and history review and
 is published on current `main`. It did not create a new tag or GitHub release.
-OpenSpec archival remains a separate action and has not been performed. M5
-ARM64/edge and gateway work are separate milestones and M5 has not started.
+OpenSpec archival remains a separate action and has not been performed.
+
+## M5 — ARM64 / Edge Deployment (complete on current `main`)
+
+Adds architecture-neutral ONVIF library discovery, native Linux `aarch64`
+build and runtime evidence, finite and passive-live parity, and bounded
+resource/stability validation. ARM64 portability was validated on an NVIDIA
+Jetson Orin Nano Developer Kit running Ubuntu 24.04. Ubuntu 24.04 x86_64
+remains the primary development and reference platform.
+
+This is exact-platform evidence, not universal ARM64, Jetson-family, or
+RK3588 support. RK3588 remains optional future platform validation. M5 carries
+one local architecture-neutral hardening patch for pinned ONVIF r25.12.6 and
+adds no Agent/MCP tool, product version, tag, or GitHub release.
 
 ## Later milestones (summary)
 
 * **M3** — finite stored/exported-media preservation assessment (complete on current `main`)
 * **M4** — passive live RTSP verification (complete on current `main`; untagged)
-* **M5** — ARM64 / edge deployment (e.g. RK3588 / Jetson class targets)
+* **M5** — scoped ARM64 portability and exact Jetson Orin Nano validation
+  (complete on current `main`; untagged)
 * **M6** — integration layer for adjacent systems
 * **M7** — optional gateway for legacy signing environments
 * **M8** — native Media Signing camera path

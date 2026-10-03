@@ -23,6 +23,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   contract and schema, synthetic validation matrix, and configuration-scoped
   Frigate/go2rtc case study; complete and published on current `main`, without
   a new tag or GitHub release
+- M5 architecture-neutral ONVIF library discovery plus native ARM64 build,
+  finite/live parity, and bounded stability validation on an NVIDIA Jetson
+  Orin Nano Developer Kit running Ubuntu 24.04; this exact-platform result is
+  not universal ARM64, Jetson-family, or RK3588 support
+- A tracked architecture-neutral hardening patch for pinned ONVIF Media
+  Signing Framework `r25.12.6` that rejects the reserved undefined TLV tag
+  before decoder dispatch; reproduced and regression-tested on x86_64 and
+  ARM64 without changing the upstream version pin
 - Experimental Agent interface on `main` (not a release tag): Python capability
   layer, read-only MCP stdio tools `video_trust.verify_file`,
   `video_trust.assess_video_integrity`, and
@@ -40,6 +48,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   separate Agent/MCP capability.
 - M4 does not add an Agent/MCP tool. Its live result does not establish source
   identity, prior/full coverage, preservation, or generic camera compatibility.
+- M5 does not add an Agent/MCP tool or change trust/schema contracts. Ubuntu
+  24.04 x86_64 remains the primary development/reference platform; the local
+  ONVIF patch must be reassessed when the pin moves to a future release.
 - Post-`v0.1.0` development continues here after the first developer release.
 
 ## [0.1.0] — 2026-09-27

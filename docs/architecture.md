@@ -7,8 +7,9 @@ Video Trust toolkit. The first technical focus is **ONVIF Media Signing**.
 
 Longer-term areas (not implemented yet) may include video integrity tooling,
 signer/source identity, certificate/PKI handling, time integrity, evidence
-verification, provenance/chain of custody, passive live
-verification, and C2PA interoperability.
+verification, provenance/chain of custody, and C2PA interoperability. Passive
+live verification is already implemented as the bounded M4 reference-lab path
+described below.
 
 ## Layering
 
@@ -78,6 +79,12 @@ The Nanexus layer must use the official Media Signing implementation for:
   not decode, render, transcode, re-encode, restream,
   or record, and it makes no continuity claim across an unobserved gap. See
   [`m4-frigate-live-case-study.md`](m4-frigate-live-case-study.md).
+* **M5** — architecture-neutral dependency discovery and native ARM64
+  portability validation on one exact NVIDIA Jetson Orin Nano Developer Kit
+  configuration. **Complete and published on current `main`; not a tagged
+  release.** Ubuntu 24.04 x86_64 remains the primary reference platform. This
+  does not establish universal ARM64, Jetson-family, or RK3588 support and does
+  not add an Agent/MCP tool.
 
 See [`roadmap.md`](roadmap.md). This project is independent open-source work that
 uses the ONVIF Media Signing framework; it is not an official ONVIF project.

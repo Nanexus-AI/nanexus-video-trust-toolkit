@@ -32,13 +32,15 @@ M1.5 Agent interface:        Experimental, on main (not a stable API)
 M2 Inspect + Report:         Implemented on current main (not a tagged release)
 M3 VMS/NVR preservation:    Complete — published on current main (not a tagged release)
 M4 Passive live RTSP:       Complete — published on current main (not a tagged release)
+M5 ARM64 / edge deployment: Complete — validated on Jetson Orin Nano (not a tagged release)
 Stable production release:   None
 ```
 
 `v0.1.0` is the first usable **developer** release of the file-based lab
 (GitHub Pre-release). Product version metadata is `0.1.0`. M1.5 adds an
 experimental Agent interface, and current `main` adds M2 inspection, M3
-preservation assessment, and bounded M4 live verification. These post-release
+preservation assessment, bounded M4 live verification, and scoped M5 ARM64
+portability. These post-release
 changes are not part of `v0.1.0`,
 do not create a new tagged release, and do not make the Agent interface a
 stable public API.
@@ -123,10 +125,12 @@ signatures. See [`docs/preservation-v0.1.md`](docs/preservation-v0.1.md).
 * A replacement for the ONVIF Media Signing Framework
 * An ONVIF-certified or conformant product
 * A system that decides whether a depicted event is real
-* General MP4/MKV input, a production RTSP monitoring service, ARM64, or
-  production PKI tooling. M4 provides one bounded developer/reference-lab
-  RTSP/TCP verification command, not a VMS, recorder, or camera-compatibility
-  guarantee.
+* General MP4/MKV input, a production RTSP monitoring service, universal ARM64
+  platform compatibility, or production PKI tooling. M4 provides one bounded
+  developer/reference-lab RTSP/TCP verification command, not a VMS, recorder,
+  or camera-compatibility guarantee. M5 validates native ARM64 portability on
+  one exact Jetson configuration; it is not a claim for every ARM64 or Jetson
+  system.
 
 Sign, tamper, and other write operations stay on the CLI. The MCP server
 does not expose them.
@@ -224,7 +228,10 @@ repository. See [`docs/architecture.md`](docs/architecture.md).
 
 ## Platform
 
-* Linux x86_64 / Ubuntu 24.04
+* Primary development/reference platform: Ubuntu 24.04 x86_64
+* ARM64 portability validated on an NVIDIA Jetson Orin Nano Developer Kit
+  running Ubuntu 24.04; see [`docs/build.md`](docs/build.md) for the exact
+  tested stack and claim boundary
 * C++20 (GCC required for M1; Clang not in required CI)
 * Meson + Ninja + OpenSSL 3.x
 * Official ONVIF framework pin `r25.12.6` (unthreaded signing plugin)
@@ -234,11 +241,11 @@ repository. See [`docs/architecture.md`](docs/architecture.md).
 
 `v0.1.0` is the published file-based reference lab. Current `main` also contains
 the experimental M1.5 Agent interface, M2 inspect/report work, completed M3
-preservation work, and completed M4 passive RTSP work published on current
-`main`; none is a new tagged release or GitHub release. Later milestones
-continue with edge and integration work. Each milestone also reviews whether a
-new domain capability should appear to an Agent; M2 did not add Agent exposure,
-while M3 adds the preservation comparison primitive.
+preservation work, completed M4 passive RTSP work, and scoped M5 ARM64
+portability published on current `main`; none is a new tagged release or GitHub
+release. Later milestones continue with integration work. Each milestone also
+reviews whether a new domain capability should appear to an Agent; M2 and M5
+did not add Agent exposure, while M3 adds the preservation comparison primitive.
 
 See [`docs/roadmap.md`](docs/roadmap.md).
 

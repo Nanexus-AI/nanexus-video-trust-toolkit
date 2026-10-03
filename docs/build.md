@@ -3,15 +3,26 @@
 Experimental / pre-release developer reference lab. The `v0.1.0` release
 contains Annex-B `verify` / `sign` / `tamper` for H.264 and H.265; current
 `main` also contains `inspect`, `compare-preservation`, and bounded
-`verify-live`; M4 is complete and published on current `main`, but it is not a
-new tagged release or GitHub release.
+`verify-live`; M4 and the scoped M5 ARM64 portability work are complete and
+published on current `main`, but neither creates a new tagged release or GitHub
+release.
 
-## Supported platform
+## Validated platforms and scope
 
-* Linux x86_64
-* Ubuntu 24.04 baseline
+* **Primary development/reference platform:** Ubuntu 24.04 x86_64.
 * **GCC** C++20 is the current supported compiler baseline (Clang is not part
   of required CI)
+* **ARM64 tested configuration:** NVIDIA Jetson Orin Nano Developer Kit,
+  `aarch64`, Ubuntu 24.04, kernel `6.8.12-1021-tegra`, GCC 13.3.0, glibc 2.39,
+  and GStreamer 1.24.2.
+
+ARM64 portability has been validated on that exact Jetson configuration. This
+establishes a native ARM64 build/runtime result under the tested environment;
+it does not establish compatibility with every ARM64 board, every Jetson,
+RK3588, every distribution, or every package layout. The listed stack records
+what was tested rather than imposing all of those exact versions as universal
+requirements. No prebuilt ARM64 package or cross-compilation workflow is
+provided.
 
 ## Packages (Ubuntu)
 
@@ -52,6 +63,14 @@ plugin: unthreaded
 
 Optional: `OMS_PREFIX=/some/prefix ./scripts/build-upstream.sh`
 
+The build helper applies the tracked
+`patches/media-signing-framework-r25.12.6-reject-undefined-tlv.patch`
+idempotently. It rejects the reserved undefined TLV tag before decoder dispatch
+after the malformed-input failure was reproduced on x86_64 and ARM64. The
+change is architecture-neutral, does not change the `r25.12.6` pin, and must be
+reassessed when adopting a future ONVIF release. See
+[`upstream-media-signing.md`](upstream-media-signing.md).
+
 ## Configure / build / test / install
 
 ```bash
@@ -61,12 +80,30 @@ meson test -C build/nanexus
 meson install -C build/nanexus   # installs video-trust (typically to /usr/local/bin)
 ```
 
+For a non-root staged install smoke:
+
+```bash
+DESTDIR="$PWD/destdir" meson install -C build/nanexus
+OMS_LIBDIR="$(find "$PWD/.oms-prefix" -type f \
+  -name 'libmedia-signing-framework.so.*' -printf '%h\n' -quit)"
+test -n "$OMS_LIBDIR"
+LD_LIBRARY_PATH="$OMS_LIBDIR" destdir/usr/local/bin/video-trust --help
+```
+
 Use `-Dlive_rtsp=enabled` to require live support at configure time or
 `-Dlive_rtsp=disabled` for a finite-file-only build. The default `auto` enables
 it when both `gstreamer-1.0` and `gstreamer-app-1.0` are available.
 
-`oms_prefix` points Meson at the ONVIF headers and shared library. The link uses
-an rpath to that prefix for local runs.
+`oms_prefix` points Meson at the ONVIF headers and shared library. Meson uses
+its configured `libdir` plus generic `lib`/`lib64` candidates, avoiding an
+x86-specific path. The build-tree binary records a RUNPATH to the selected
+ONVIF library directory and runs directly. Meson removes that build RUNPATH
+when installing: a staged/non-system install therefore needs an explicit
+loader path as shown above, while a system deployment must install the ONVIF
+library in a loader-configured location and refresh the loader cache. This is
+a known local-prefix deployment limitation, not a relocatable binary-package
+guarantee. Container, appliance, and prebuilt-package deployment are outside
+the validated scope.
 
 Installed user-facing artifact: **`video-trust`** only (no public SDK headers).
 

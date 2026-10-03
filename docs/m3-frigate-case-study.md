@@ -103,7 +103,8 @@ The result applies to the exact tested Frigate 0.17.1 stream-copy path, finite
 synthetic sources, codecs, transport, recording selection, export calls, and
 extraction procedure. It is evidence for that configuration, not general
 ONVIF conformance testing of Frigate. M3 evaluates stored/exported artifacts;
-passive or continuous live RTSP verification remains future M4 work.
+passive live RTSP verification was delivered separately in M4 and is not part
+of this case study.
 
 For the deterministic machine contract, see
 [`preservation-v0.1.md`](preservation-v0.1.md). For the reproducible synthetic

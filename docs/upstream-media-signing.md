@@ -34,7 +34,10 @@ It rejects the reserved `UNDEFINED_TAG` before decoder dispatch; without that
 check, malformed signing SEI data containing literal tag zero can call the
 sentinel tuple's null decoder. The patch is intentionally local and minimal so
 the approved release pin remains reproducible while awaiting an upstream
-release containing equivalent validation.
+release containing equivalent validation. The issue was reproduced on x86_64
+and ARM64, and the rejection is architecture-neutral. The patch does not bump
+the upstream version and must be reassessed whenever the project moves to a
+future ONVIF release.
 
 ## Build system
 
