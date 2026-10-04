@@ -35,6 +35,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   bounded `video-trust-integration` adapter for verify, inspect, and
   preservation comparison; embedded domain documents retain their existing
   `0.1` schemas and meanings
+- M6 standard-library adjacent-system reference consumer, reproducible
+  synthetic preservation workflow, scoped read-only retained Frigate artifact
+  observation, and targeted validation on the documented Jetson configuration
 - Experimental Agent interface on `main` (not a release tag): Python capability
   layer, read-only MCP stdio tools `video_trust.verify_file`,
   `video_trust.assess_video_integrity`, and

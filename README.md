@@ -33,6 +33,7 @@ M2 Inspect + Report:         Implemented on current main (not a tagged release)
 M3 VMS/NVR preservation:    Complete — published on current main (not a tagged release)
 M4 Passive live RTSP:       Complete — published on current main (not a tagged release)
 M5 ARM64 / edge deployment: Complete — validated on Jetson Orin Nano (not a tagged release)
+M6 Integration layer:        Complete — finite local-process contract and reference (not tagged)
 Stable production release:   None
 ```
 
@@ -40,7 +41,8 @@ Stable production release:   None
 (GitHub Pre-release). Product version metadata is `0.1.0`. M1.5 adds an
 experimental Agent interface, and current `main` adds M2 inspection, M3
 preservation assessment, bounded M4 live verification, and scoped M5 ARM64
-portability. These post-release
+portability, plus the M6 finite integration contract and adjacent-system
+reference. These post-release
 changes are not part of `v0.1.0`,
 do not create a new tagged release, and do not make the Agent interface a
 stable public API.
@@ -65,6 +67,10 @@ Developer commands:
 * `video-trust verify-live` (bounded one-stream RTSP/TCP text + JSONL 0.1)
 * `video-trust tamper` (deterministic test mutations)
 * `video-trust-integration` (bounded one-request/one-process finite JSON adapter)
+
+A standard-library reference consumer demonstrates safe adjacent-process use
+without adding product-specific trust logic. See
+[`docs/m6-adjacent-integration.md`](docs/m6-adjacent-integration.md).
 
 `verify` is the compact automation-facing verdict and axes contract. `inspect`
 adds validation counts, raw timestamp observations, and optional vendor
@@ -244,8 +250,9 @@ repository. See [`docs/architecture.md`](docs/architecture.md).
 `v0.1.0` is the published file-based reference lab. Current `main` also contains
 the experimental M1.5 Agent interface, M2 inspect/report work, completed M3
 preservation work, completed M4 passive RTSP work, and scoped M5 ARM64
-portability published on current `main`; none is a new tagged release or GitHub
-release. Later milestones continue with integration work. Each milestone also
+portability plus completed M6 finite integration work published on current
+`main`; none is a new tagged release or GitHub release. Later milestones
+continue with optional legacy signing and native-camera work. Each milestone also
 reviews whether a new domain capability should appear to an Agent; M2 and M5
 did not add Agent exposure, while M3 adds the preservation comparison primitive.
 

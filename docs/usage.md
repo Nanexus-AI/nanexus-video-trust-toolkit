@@ -167,3 +167,7 @@ Details and caveats: [`m1-contracts.md`](m1-contracts.md).
 The experimental Agent layer can verify and compare preservation through MCP
 stdio. It is read-only: it does not expose `sign`, `tamper`, or M2 `inspect`.
 See [`agent-interface.md`](agent-interface.md).
+
+For bounded use from an adjacent local process, see the generic reference
+consumer and synthetic workflow in
+[`m6-adjacent-integration.md`](m6-adjacent-integration.md).

@@ -7,7 +7,7 @@ High-level milestone picture for Nanexus Video Trust Toolkit.
 **Current published developer release:** **M1 / `v0.1.0`** (Pre-release).
 
 M1.5 and M2 are implemented in current `main` development history. M3 through
-M5 are complete and published on current `main`. None is part of the `v0.1.0`
+M6 are complete and published on current `main`. None is part of the `v0.1.0`
 tag or implies that a later release exists.
 
 This is an independent open-source project using the ONVIF Media Signing
@@ -22,7 +22,7 @@ framework/standard. It is **not** an official ONVIF project.
 | **M3** | VMS/NVR Preservation Testing | **Complete and published on current `main`** — not a tagged release |
 | **M4** | Passive Live RTSP Verification | **Complete and published on current `main`** — not a tagged release |
 | **M5** | ARM64 / Edge Deployment | **Complete and published on current `main`** — scoped Jetson validation; not a tagged release |
-| **M6** | Integration Layer | Planned |
+| **M6** | Integration Layer | **Complete and published on current `main`** — finite local-process contract; not a tagged release |
 | **M7** | Optional Legacy Signing Gateway | Planned |
 | **M8** | Native Media Signing Camera | Planned |
 
@@ -101,9 +101,9 @@ configuration and do not establish generic camera/server compatibility,
 source identity, full coverage, preservation, or production readiness. See
 [`m4-frigate-live-case-study.md`](m4-frigate-live-case-study.md).
 
-M4 completed its final regression, publication audit, and history review and
-is published on current `main`. It did not create a new tag or GitHub release.
-OpenSpec archival remains a separate action and has not been performed.
+M4 completed its final regression, publication audit, history review, and
+private OpenSpec archival and is published on current `main`. It did not create
+a new tag or GitHub release.
 
 ## M5 — ARM64 / Edge Deployment (complete on current `main`)
 
@@ -118,13 +118,30 @@ RK3588 support. RK3588 remains optional future platform validation. M5 carries
 one local architecture-neutral hardening patch for pinned ONVIF r25.12.6 and
 adds no Agent/MCP tool, product version, tag, or GitHub release.
 
+## M6 — Integration Layer (complete on current `main`)
+
+Adds a thin C++ facade over the existing finite domain APIs and a bounded
+one-request/one-process JSON adapter. Integration contract `0.1` exposes only
+`verify_file`, `inspect_file`, and `compare_preservation`; completed domain
+outcomes remain distinct from execution failures and embed the frozen domain
+documents unchanged. A generic standard-library reference consumer and
+synthetic workflow demonstrate adjacent-system use, with a narrowly scoped
+read-only observation of retained Frigate export artifacts.
+
+M6 does not add a daemon, network service, stable binary ABI, vendor plugin,
+arbitrary shell or GStreamer surface, live integration operation, Agent/MCP
+tool, product version, tag, or GitHub release. See
+[`integration-v0.1.md`](integration-v0.1.md) and
+[`m6-adjacent-integration.md`](m6-adjacent-integration.md).
+
 ## Later milestones (summary)
 
 * **M3** — finite stored/exported-media preservation assessment (complete on current `main`)
 * **M4** — passive live RTSP verification (complete on current `main`; untagged)
 * **M5** — scoped ARM64 portability and exact Jetson Orin Nano validation
   (complete on current `main`; untagged)
-* **M6** — integration layer for adjacent systems
+* **M6** — finite integration layer and adjacent-system reference
+  (complete on current `main`; untagged)
 * **M7** — optional gateway for legacy signing environments
 * **M8** — native Media Signing camera path
 

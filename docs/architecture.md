@@ -104,6 +104,13 @@ The Nanexus layer must use the official Media Signing implementation for:
   release.** Ubuntu 24.04 x86_64 remains the primary reference platform. This
   does not establish universal ARM64, Jetson-family, or RK3588 support and does
   not add an Agent/MCP tool.
+* **M6** — internal C++ integration facade plus a bounded one-request/one-process
+  JSON adapter for the three finite operations. **Complete and published on
+  current `main`; not a tagged release.** Embedded domain documents retain
+  their existing semantics; live remains outside integration `0.1`, and the
+  reference consumer adds neither a daemon nor an Agent/MCP tool. See
+  [`integration-v0.1.md`](integration-v0.1.md) and
+  [`m6-adjacent-integration.md`](m6-adjacent-integration.md).
 
 See [`roadmap.md`](roadmap.md). This project is independent open-source work that
 uses the ONVIF Media Signing framework; it is not an official ONVIF project.

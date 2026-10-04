@@ -23,6 +23,11 @@ product version `0.1.0` and the embedded domain schema versions.
 Live RTSP is intentionally absent from integration 0.1. The existing
 `verify-live` CLI and live JSONL 0.1 contract are unchanged.
 
+A generic Python standard-library consumer and reproducible synthetic workflow
+are documented in [`m6-adjacent-integration.md`](m6-adjacent-integration.md).
+It is a local-process contract example, not a Frigate plugin or vendor control
+integration.
+
 ## Execution versus trust
 
 `execution.status` is `completed` or `failed`. A completed response embeds the
