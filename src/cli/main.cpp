@@ -1,5 +1,6 @@
 #include "videotrust/compare.hpp"
 #include "videotrust/error.hpp"
+#include "videotrust/integration.hpp"
 #include "videotrust/live_contract.hpp"
 #include "videotrust/live_ingest.hpp"
 #include "videotrust/render.hpp"
@@ -605,9 +606,10 @@ int RunVerify(const VerifyArgs& args) {
   opt.input_path = args.input;
   opt.ca_pem_path = args.ca;
 
-  auto result = videotrust::VerifyAnnexBFile(opt);
-  if (!result.ok()) {
-    const auto& e = result.error();
+  auto execution = videotrust::ExecuteIntegration(
+      videotrust::IntegrationVerifyRequest{std::move(opt)});
+  if (!execution.ok()) {
+    const auto& e = execution.error();
     std::cerr << "error: " << e.message << "\n";
     using videotrust::ErrorCode;
     if (e.code == ErrorCode::ParseError || e.code == ErrorCode::InvalidArgument ||
@@ -623,13 +625,15 @@ int RunVerify(const VerifyArgs& args) {
     }
     return static_cast<int>(videotrust::ExitCode::RuntimeFailure);
   }
+  const auto& result =
+      std::get<videotrust::VerificationResult>(execution.value().domain);
 
   if (args.json) {
-    std::cout << videotrust::RenderJson(result.value());
+    std::cout << videotrust::RenderJson(result);
   } else {
-    std::cout << videotrust::RenderText(result.value());
+    std::cout << videotrust::RenderText(result);
   }
-  return static_cast<int>(videotrust::ExitCodeForVerification(result.value()));
+  return static_cast<int>(videotrust::ExitCodeForVerification(result));
 }
 
 int RunInspect(const VerifyArgs& args) {
@@ -638,9 +642,10 @@ int RunInspect(const VerifyArgs& args) {
   opt.input_path = args.input;
   opt.ca_pem_path = args.ca;
 
-  auto result = videotrust::InspectAnnexBFile(opt);
-  if (!result.ok()) {
-    const auto& e = result.error();
+  auto execution = videotrust::ExecuteIntegration(
+      videotrust::IntegrationInspectRequest{std::move(opt)});
+  if (!execution.ok()) {
+    const auto& e = execution.error();
     std::cerr << "error: " << e.message << "\n";
     using videotrust::ErrorCode;
     if (e.code == ErrorCode::ParseError || e.code == ErrorCode::InvalidArgument ||
@@ -650,14 +655,16 @@ int RunInspect(const VerifyArgs& args) {
     }
     return static_cast<int>(videotrust::ExitCode::RuntimeFailure);
   }
+  const auto& result =
+      std::get<videotrust::InspectionResult>(execution.value().domain);
 
   if (args.json) {
-    std::cout << videotrust::RenderInspectionJson(result.value());
+    std::cout << videotrust::RenderInspectionJson(result);
   } else {
-    std::cout << videotrust::RenderInspectionText(result.value());
+    std::cout << videotrust::RenderInspectionText(result);
   }
   return static_cast<int>(
-      videotrust::ExitCodeForVerification(result.value().verification));
+      videotrust::ExitCodeForVerification(result.verification));
 }
 
 int RunCompare(const CompareArgs& args) {
@@ -669,9 +676,10 @@ int RunCompare(const CompareArgs& args) {
   options.after_ca_pem_path = args.after_ca;
   options.transformation = args.transformation;
 
-  auto result = videotrust::ComparePreservation(options);
-  if (!result.ok()) {
-    const auto& error = result.error();
+  auto execution = videotrust::ExecuteIntegration(
+      videotrust::IntegrationCompareRequest{std::move(options)});
+  if (!execution.ok()) {
+    const auto& error = execution.error();
     std::cerr << "error: " << error.message << "\n";
     using videotrust::ErrorCode;
     if (error.code == ErrorCode::ParseError ||
@@ -682,13 +690,15 @@ int RunCompare(const CompareArgs& args) {
     }
     return static_cast<int>(videotrust::ExitCode::RuntimeFailure);
   }
+  const auto& result =
+      std::get<videotrust::PreservationAssessment>(execution.value().domain);
 
   if (args.json) {
-    std::cout << videotrust::RenderPreservationJson(result.value());
+    std::cout << videotrust::RenderPreservationJson(result);
   } else {
-    std::cout << videotrust::RenderPreservationText(result.value());
+    std::cout << videotrust::RenderPreservationText(result);
   }
-  return static_cast<int>(videotrust::ExitCodeForPreservation(result.value()));
+  return static_cast<int>(videotrust::ExitCodeForPreservation(result));
 }
 
 int RunSign(const SignArgs& args) {

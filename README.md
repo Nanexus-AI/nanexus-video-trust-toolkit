@@ -64,6 +64,7 @@ Developer commands:
 * `video-trust compare-preservation` (before/after text + JSON 0.1)
 * `video-trust verify-live` (bounded one-stream RTSP/TCP text + JSONL 0.1)
 * `video-trust tamper` (deterministic test mutations)
+* `video-trust-integration` (bounded one-request/one-process finite JSON adapter)
 
 `verify` is the compact automation-facing verdict and axes contract. `inspect`
 adds validation counts, raw timestamp observations, and optional vendor
@@ -140,7 +141,8 @@ does not expose them.
 ```bash
 sudo apt-get install -y build-essential pkg-config meson ninja-build \
   libssl-dev libgstreamer1.0-dev libgstreamer-plugins-base1.0-dev \
-  gstreamer1.0-plugins-good ffmpeg git ca-certificates python3-jsonschema
+  gstreamer1.0-plugins-good nlohmann-json3-dev ffmpeg git ca-certificates \
+  python3-jsonschema
 
 git clone https://github.com/Nanexus-AI/nanexus-video-trust-toolkit.git
 cd nanexus-video-trust-toolkit

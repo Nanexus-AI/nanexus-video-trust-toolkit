@@ -1,0 +1,75 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://nanexus.ai/schemas/nanexus-video-trust-integration-request-0.1.json",
+  "title": "Nanexus Video Trust integration request 0.1",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["document_type", "schema_version", "request_id", "operation", "input"],
+  "properties": {
+    "document_type": {"const": "nanexus_video_trust_integration_request"},
+    "schema_version": {"const": "0.1"},
+    "request_id": {"type": "string", "pattern": "^[A-Za-z0-9_-]{1,64}$"},
+    "operation": {
+      "enum": ["verify_file", "inspect_file", "compare_preservation"]
+    },
+    "input": {"type": "object"}
+  },
+  "allOf": [
+    {
+      "if": {"properties": {"operation": {"enum": ["verify_file", "inspect_file"]}}},
+      "then": {
+        "properties": {
+          "input": {"$ref": "#/$defs/single_file_input"}
+        }
+      }
+    },
+    {
+      "if": {"properties": {"operation": {"const": "compare_preservation"}}},
+      "then": {
+        "properties": {
+          "input": {"$ref": "#/$defs/compare_input"}
+        }
+      }
+    }
+  ],
+  "$defs": {
+    "path": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 4096,
+      "pattern": "^[^\\u0000\\r\\n]+$"
+    },
+    "codec": {"enum": ["h264", "h265"]},
+    "single_file_input": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["codec", "input_file"],
+      "properties": {
+        "codec": {"$ref": "#/$defs/codec"},
+        "input_file": {"$ref": "#/$defs/path"},
+        "trust_anchor": {"$ref": "#/$defs/path"}
+      }
+    },
+    "compare_input": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["codec", "before_file", "after_file"],
+      "properties": {
+        "codec": {"$ref": "#/$defs/codec"},
+        "before_file": {"$ref": "#/$defs/path"},
+        "after_file": {"$ref": "#/$defs/path"},
+        "before_trust_anchor": {"$ref": "#/$defs/path"},
+        "after_trust_anchor": {"$ref": "#/$defs/path"},
+        "transformation": {
+          "enum": ["transparent", "remux", "clip", "segment", "concatenate", "transcode", "metadata-change", "timestamp-rewrite", "proprietary-or-unknown"]
+        },
+        "pipeline_id": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 128,
+          "pattern": "^[^\\u0000\\r\\n]+$"
+        }
+      }
+    }
+  }
+}

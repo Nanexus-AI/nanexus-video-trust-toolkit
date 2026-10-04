@@ -3,6 +3,18 @@
 Experimental / pre-release. File commands use Annex-B elementary streams;
 `verify-live` is the separate bounded RTSP/TCP reference-lab command.
 
+`video-trust-integration` is a separate finite, read-only local-process adapter
+for adjacent systems. Its contract and policy are documented in
+[`integration-v0.1.md`](integration-v0.1.md).
+
+Example:
+
+```bash
+export NANEXUS_INTEGRATION_ALLOWED_ROOTS=/srv/video-trust-inputs
+printf '%s\n' '{"document_type":"nanexus_video_trust_integration_request","schema_version":"0.1","request_id":"verify-1","operation":"verify_file","input":{"codec":"h264","input_file":"/srv/video-trust-inputs/clip.h264"}}' \
+  | video-trust-integration
+```
+
 M1 signing is a **reference-lab** operation. Valid signatures and certificate
 checks do **not** establish camera/source authenticity.
 

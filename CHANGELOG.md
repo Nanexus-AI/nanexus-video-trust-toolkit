@@ -31,6 +31,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   Signing Framework `r25.12.6` that rejects the reserved undefined TLV tag
   before decoder dispatch; reproduced and regression-tested on x86_64 and
   ARM64 without changing the upstream version pin
+- M6 finite local-process integration contract `0.1`, internal C++ facade, and
+  bounded `video-trust-integration` adapter for verify, inspect, and
+  preservation comparison; embedded domain documents retain their existing
+  `0.1` schemas and meanings
 - Experimental Agent interface on `main` (not a release tag): Python capability
   layer, read-only MCP stdio tools `video_trust.verify_file`,
   `video_trust.assess_video_integrity`, and
@@ -51,6 +55,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - M5 does not add an Agent/MCP tool or change trust/schema contracts. Ubuntu
   24.04 x86_64 remains the primary development/reference platform; the local
   ONVIF patch must be reassessed when the pin moves to a future release.
+- M6 finite integration does not add an Agent/MCP tool or expose live RTSP.
+  Execution failures remain separate from completed trust/domain outcomes.
 - Post-`v0.1.0` development continues here after the first developer release.
 
 ## [0.1.0] — 2026-09-27

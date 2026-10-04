@@ -86,6 +86,31 @@ preservation_matrix_manifest = meson.project_source_root() / 'tests/fixtures/pre
 ffmpeg = find_program('ffmpeg', required: false)
 ffprobe = find_program('ffprobe', required: false)
 
+integration_request_schema = meson.project_source_root() / 'docs/schemas/nanexus-video-trust-integration-request-0.1.json'
+integration_response_schema = meson.project_source_root() / 'docs/schemas/nanexus-video-trust-integration-response-0.1.json'
+integration_test_script = meson.project_source_root() / 'tests/integration/test_integration_adapter.py'
+
+test(
+  'integration_adapter_contract',
+  verify_runner,
+  args: [
+    '-lc',
+    'set -euo pipefail; '
+    + 'OMS_SIGN_ANNEXB="' + oms_sign_annexb.full_path() + '" '
+    + '"' + gen_script + '" "' + fixture_dir + '"; '
+    + '"' + python.full_path() + '" '
+    + '"' + integration_test_script + '" '
+    + '"' + video_trust_integration.full_path() + '" '
+    + '"' + video_trust.full_path() + '" '
+    + '"' + fixture_dir + '" '
+    + '"' + integration_request_schema + '" '
+    + '"' + integration_response_schema + '"',
+  ],
+  depends: [video_trust, video_trust_integration, oms_sign_annexb],
+  timeout: 180,
+  is_parallel: false,
+)
+
 test(
   'verify_integration',
   verify_runner,

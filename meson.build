@@ -19,6 +19,7 @@ if oms_prefix == ''
 endif
 
 openssl_dep = dependency('openssl', version: '>=3.0.0')
+nlohmann_json_dep = dependency('nlohmann_json', version: '>=3.11.3')
 gst_dep = dependency('gstreamer-1.0', version: '>=1.24',
   required: get_option('live_rtsp'))
 gst_app_dep = dependency('gstreamer-app-1.0', version: '>=1.24',
@@ -85,6 +86,7 @@ videotrust_core = static_library(
     'src/core/nal_classify.cpp',
     'src/core/preservation.cpp',
     'src/core/result.cpp',
+    'src/integration/integration.cpp',
     'src/live/live.cpp',
     'src/render/live_contract.cpp',
     'src/render/render.cpp',
@@ -132,6 +134,14 @@ video_trust = executable(
     '-DVIDEO_TRUST_VERSION="' + meson.project_version() + '"',
     live_rtsp_enabled ? '-DVIDEO_TRUST_HAS_GSTREAMER=1' : '-DVIDEO_TRUST_HAS_GSTREAMER=0',
   ],
+  install: true,
+)
+
+video_trust_integration = executable(
+  'video-trust-integration',
+  'src/integration/main.cpp',
+  dependencies: [videotrust_dep, nlohmann_json_dep],
+  cpp_args: ['-DVIDEO_TRUST_VERSION="' + meson.project_version() + '"'],
   install: true,
 )
 

@@ -22,7 +22,19 @@ Verification / domain mapping
             ├────────► VerificationResult ──► verify text / JSON 0.1
             │
             └────────► InspectionResult ────► inspect text / JSON 0.1
-                                             (CLI/domain only)
+                                             (CLI/domain)
+
+Finite integration path:
+VerificationResult / InspectionResult / PreservationAssessment
+            │
+            ▼
+Internal C++ integration facade
+            │
+            ▼
+Bounded one-request/one-process JSON adapter
+            │
+            ▼
+Adjacent local system
 
 Agent path (typed read-only contracts):
 VerificationResult / PreservationAssessment ──► Python CoreClient
@@ -46,6 +58,13 @@ observations for `inspect` without changing those axes. Both are derived from
 the same official ONVIF validation pipeline. The capability layer does
 not depend on an Agent runtime. The MCP adapter only registers tools and
 returns envelopes. Direct CLI use does not go through that adapter.
+
+The finite CLI and `video-trust-integration` adapter share the internal C++
+integration facade, which delegates to the existing domain functions and
+renderers. The facade is a source-level project boundary, not a stable shared
+library ABI. The integration adapter embeds existing domain JSON documents and
+keeps execution errors separate from completed trust outcomes. It does not
+expose live RTSP; see [`integration-v0.1.md`](integration-v0.1.md).
 
 The Nanexus layer must use the official Media Signing implementation for:
 

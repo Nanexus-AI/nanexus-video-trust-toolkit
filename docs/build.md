@@ -29,7 +29,8 @@ provided.
 ```bash
 sudo apt-get install -y build-essential pkg-config meson ninja-build \
   libssl-dev libgstreamer1.0-dev libgstreamer-plugins-base1.0-dev \
-  gstreamer1.0-plugins-good ffmpeg git ca-certificates python3-jsonschema
+  gstreamer1.0-plugins-good nlohmann-json3-dev ffmpeg git ca-certificates \
+  python3-jsonschema
 ```
 
 * **ffmpeg** is used by test fixture generation (not required to run a
@@ -42,6 +43,9 @@ sudo apt-get install -y build-essential pkg-config meson ninja-build \
 * `verify-live` dynamically links the LGPL GStreamer core/app libraries and
   uses the LGPL `rtspsrc` and RTP depayloader plugins from plugins-good. No
   GStreamer binary is vendored and no GPL-only plugin is required.
+* `video-trust-integration` uses the MIT-licensed, header-only nlohmann JSON
+  package at build time. It adds no JSON runtime library and remains independent
+  from optional GStreamer/live support.
 
 ## ONVIF dependency
 
