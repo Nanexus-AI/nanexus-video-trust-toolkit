@@ -34,7 +34,7 @@ M3 VMS/NVR preservation:    Complete — published on current main (not a tagged
 M4 Passive live RTSP:       Complete — published on current main (not a tagged release)
 M5 ARM64 / edge deployment: Complete — validated on Jetson Orin Nano (not a tagged release)
 M6 Integration layer:        Complete — finite local-process contract and reference (not tagged)
-M7 Signing gateway:         In progress — x86 stream-oriented core; live runtime remains open
+M7 Signing gateway:         In progress — x86 core and internal guarded live orchestration
 Stable production release:   None
 ```
 
@@ -182,8 +182,8 @@ More detail: [`docs/build.md`](docs/build.md), [`docs/usage.md`](docs/usage.md),
 [`docs/m1-contracts.md`](docs/m1-contracts.md), [`docs/json-v0.1.md`](docs/json-v0.1.md),
 and [`docs/inspection-v0.1.md`](docs/inspection-v0.1.md).
 
-The initial M7 stream-oriented signing core is an internal C++ API. It has no
-active RTSP command yet; see [`docs/m7-signing-gateway.md`](docs/m7-signing-gateway.md)
+M7 provides internal C++ signing and discontinuity-aware live orchestration.
+It has no active RTSP command yet; see [`docs/m7-signing-gateway.md`](docs/m7-signing-gateway.md)
 for its compressed egress, epoch semantics, and remaining work.
 
 ## Agent quick start

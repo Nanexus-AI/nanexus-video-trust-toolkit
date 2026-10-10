@@ -24,7 +24,9 @@ gst_dep = dependency('gstreamer-1.0', version: '>=1.24',
   required: get_option('live_rtsp'))
 gst_app_dep = dependency('gstreamer-app-1.0', version: '>=1.24',
   required: get_option('live_rtsp'))
-live_rtsp_enabled = gst_dep.found() and gst_app_dep.found()
+gst_rtp_dep = dependency('gstreamer-rtp-1.0', version: '>=1.24',
+  required: get_option('live_rtsp'))
+live_rtsp_enabled = gst_dep.found() and gst_app_dep.found() and gst_rtp_dep.found()
 
 oms_lib_candidates = [
   oms_prefix / get_option('libdir'),
@@ -92,6 +94,7 @@ videotrust_core = static_library(
     'src/render/render.cpp',
     'src/signing/sign.cpp',
     'src/signing/stream_signer.cpp',
+    'src/signing/live_signing.cpp',
     'src/tamper/tamper.cpp',
     'src/upstream/session.cpp',
     'src/upstream/upstream_mapping.cpp',
@@ -106,7 +109,7 @@ live_sources = []
 live_deps = []
 if live_rtsp_enabled
   live_sources += files('src/live/gstreamer_ingest.cpp')
-  live_deps += [gst_dep, gst_app_dep]
+  live_deps += [gst_dep, gst_app_dep, gst_rtp_dep]
 endif
 
 videotrust_links = [videotrust_core]

@@ -140,7 +140,9 @@ sink emits compressed NALs plus official signing SEIs. Clean EOS, explicit
 abort, and terminal input/signer/output failures are separate states. Gateway
 signer identity does not establish original camera identity.
 
-M4's fixed compressed RTSP/TCP ingest remains the live-path precedent. Active
-gateway orchestration awaits a discontinuity-aware internal adapter and does
-not change passive live 0.1 or M6 finite integration 0.1. See
+M4 and M7 share a fixed compressed RTSP/TCP ingest runner. M7's opt-in guards
+stop on RTP or pipeline continuity loss; its typed AU/lifecycle boundary drives
+fresh signers and separate sinks per epoch. Ambiguous RTSP EOS aborts, while
+explicit clean EOS or a healthy bounded observation can finalize. Passive live
+0.1 and M6 finite integration 0.1 remain unchanged. See
 [`m7-signing-gateway.md`](m7-signing-gateway.md).

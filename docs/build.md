@@ -40,6 +40,9 @@ sudo apt-get install -y build-essential pkg-config meson ninja-build \
   It is a test/development dependency and is not required to run a pre-built
   `video-trust` binary against media.
 * **OpenSSL 3.x** via `libssl-dev` / `pkg-config openssl`.
+* The shared M4/M7 live ingest links the LGPL GStreamer core/app/RTP libraries.
+  RTP helpers come from the same plugins-base development package already
+  required for appsink; no additional package or media server is needed.
 * `verify-live` dynamically links the LGPL GStreamer core/app libraries and
   uses the LGPL `rtspsrc` and RTP depayloader plugins from plugins-good. No
   GStreamer binary is vendored and no GPL-only plugin is required.
@@ -130,3 +133,20 @@ uses a separate `schema_version` of `"0.1"` — that is not the product SemVer.
 * [`inspection-v0.1.md`](inspection-v0.1.md) — inspection text/JSON contract
 * [`preservation-v0.1.md`](preservation-v0.1.md) — preservation text/JSON contract
 * [`fixtures.md`](fixtures.md) — test media provenance
+
+## Local development prefixes
+
+Dependencies may be installed normally or supplied through a caller-owned local
+prefix and `PKG_CONFIG_PATH`. M7 does not require `/tmp`, a private sibling
+workspace, or any fixed local prefix. Its JSON build dependency is the existing
+M6 `nlohmann-json3-dev` (MIT, Ubuntu 24.04 version 3.11.3). A transient local
+package extraction used during development is an environment visibility choice;
+it is not part of the product source or deployment contract. Clean builds with
+the documented development packages use ordinary pkg-config discovery.
+
+A partial extracted development sysroot may have broken library symlinks if
+the corresponding runtime libraries were not extracted. Repair discovery in
+the caller's local prefix, or use a complete development environment; no system
+package installation is implied by a missing dependency. Existing ARM64
+evidence does not establish M7 support, and future Jetson work must first follow
+its protected baseline audit and authorization requirements.

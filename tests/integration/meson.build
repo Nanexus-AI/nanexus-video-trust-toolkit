@@ -335,3 +335,32 @@ test(
   timeout: 180,
   is_parallel: false,
 )
+
+test_live_signing = executable(
+  'test_live_signing', 'test_live_signing.cpp',
+  dependencies: videotrust_dep, install: false,
+  link_args: ['-Wl,--wrap=onvif_media_signing_add_nalu_for_signing'],
+)
+test('live_signing_epochs', verify_runner,
+  args: ['-lc', 'set -euo pipefail; '
+    + 'OMS_SIGN_ANNEXB="' + oms_sign_annexb.full_path() + '" '
+    + '"' + gen_script + '" "' + fixture_dir + '"; '
+    + '"' + test_live_signing.full_path() + '" "' + fixture_dir + '"'],
+  depends: [oms_sign_annexb, test_live_signing], timeout: 180, is_parallel: false,
+)
+
+if live_rtsp_enabled
+  test_live_signing_rtsp = executable(
+    'test_live_signing_rtsp', 'test_live_signing_rtsp.cpp',
+    dependencies: videotrust_dep, install: false,
+  )
+  test('live_signing_rtsp', verify_runner,
+    args: ['-lc', 'set -euo pipefail; '
+      + 'OMS_SIGN_ANNEXB="' + oms_sign_annexb.full_path() + '" '
+      + '"' + gen_script + '" "' + fixture_dir + '"; '
+      + '"' + python.full_path() + '" '
+      + '"' + meson.project_source_root() / 'tests/integration/test_live_signing_rtsp.py' + '" '
+      + '"' + test_live_signing_rtsp.full_path() + '" "' + fixture_dir + '"'],
+    depends: [oms_sign_annexb, test_live_signing_rtsp], timeout: 60, is_parallel: false,
+  )
+endif

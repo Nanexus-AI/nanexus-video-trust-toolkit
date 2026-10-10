@@ -23,7 +23,7 @@ framework/standard. It is **not** an official ONVIF project.
 | **M4** | Passive Live RTSP Verification | **Complete and published on current `main`** — not a tagged release |
 | **M5** | ARM64 / Edge Deployment | **Complete and published on current `main`** — scoped Jetson validation; not a tagged release |
 | **M6** | Integration Layer | **Complete and published on current `main`** — finite local-process contract; not a tagged release |
-| **M7** | Legacy Signing Gateway Reference Prototype | In progress — M7-A stream-oriented core; live runtime and later validation remain open |
+| **M7** | Legacy Signing Gateway Reference Prototype | In progress — M7-A core and guarded internal live runtime; later validation remains open |
 | **M8** | Native Media Signing Camera | Planned |
 
 ## M0 — Feasibility Spike (complete)
@@ -142,9 +142,10 @@ tool, product version, tag, or GitHub release. See
   (complete on current `main`; untagged)
 * **M6** — finite integration layer and adjacent-system reference
   (complete on current `main`; untagged)
-* **M7** — legacy signing gateway reference prototype; initial x86 signing core
-  (see [`m7-signing-gateway.md`](m7-signing-gateway.md)); bounded live runtime
-  remains M7-A continuation, Jetson reference validation M7-B, closure M7-C
+* **M7** — legacy signing gateway reference prototype; x86 signing core and
+  guarded internal live orchestration (see [`m7-signing-gateway.md`](m7-signing-gateway.md));
+  operator/artifact workflow remains M7-A continuation, Jetson reference
+  validation M7-B, closure M7-C
 * **M8** — native Media Signing camera path
 
 Milestone titles may be refined as design work proceeds; the progression above is

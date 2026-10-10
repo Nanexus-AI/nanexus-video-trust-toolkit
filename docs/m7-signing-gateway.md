@@ -2,8 +2,9 @@
 
 M7 — Legacy Signing Gateway Reference Prototype is in progress. Its first
 M7-A slice supplies an internal C++ stream-oriented signer on Ubuntu 24.04
-x86_64. Active RTSP gateway orchestration, downstream transport, Jetson
-validation (M7-B), and final end-to-end validation/closure (M7-C) remain open.
+x86_64. M7-A2 adds an internal discontinuity-aware RTSP/TCP signing runtime.
+Downstream transport, an operator invocation/artifact workflow, Jetson validation
+(M7-B), and final end-to-end validation/closure (M7-C) remain open.
 There is no new command, network service, tagged release, or version change.
 
 ## Compressed media boundary
@@ -71,14 +72,66 @@ A gap, reconnect, key/certificate replacement, or process restart requires a
 fresh signer and separately identified output artifact. No continuity is
 inferred between epochs. Automatic reconnect and identity hot-swap are absent.
 
-## Live-path continuation
+## Discontinuity-aware live orchestration
 
-M4's bounded fixed graph is the reuse precedent:
+`LiveSigningOrchestrator` in `videotrust/live_signing.hpp` consumes a narrow
+internal event boundary: complete compressed AU, discontinuity, clean EOS,
+intentional bounded stop, abort, or terminal failure. It waits for IDR/IRAP
+startup and creates a fresh `StreamSigner` plus `SigningEpochSink` for each
+epoch. All NALs in an AU share one gateway observation timestamp.
+
+The sink factory must provide distinct output storage for each epoch and each
+runtime invocation; IDs are local to a run. Each sink receives exactly one
+close callback, carrying its signer state. Flush/close must succeed before the
+runtime reports finalized output. A close failure is a terminal output failure.
+The runtime caps epoch count at eight and cumulative output at a configurable
+maximum of 1 GiB, in addition to A1's per-epoch limits. AUs are bounded to
+8 MiB and 4,096 NALs. Caller callbacks must be synchronous, non-reentrant,
+prompt, and cooperative; arbitrary blocking caller code cannot be preempted.
+The test implementation uses bounded memory sinks.
+
+| Input/lifecycle | Signing behavior |
+| --- | --- |
+| Continuous AU after random-access startup | Continue the current signer |
+| Explicit discontinuity | Abort and close the old sink without final SEIs; wait for new random access |
+| Explicitly resumed random-access AU | Fresh signer and separate sink/epoch |
+| Caller-controlled clean EOS | Finalize, drain metadata, close once |
+| Healthy intentional bounded stop | Finalize only the complete observed prefix; no whole-source coverage claim |
+| Cancellation or abrupt loss | Abort; no clean completion |
+| Identity, input, signer, write, or close failure | Terminal failure; no restart within the failed orchestrator |
+
+`RunGStreamerLiveSigning` reuses the same fixed graph as M4:
 RTSP/TCP → `rtspsrc` → codec RTP depay → compressed byte-stream/AU → bounded
-NAL consumer. Its current callback does not expose buffer discontinuity.
-Gateway integration must surface uncertain continuity before feeding active
-signing state, while preserving the frozen passive M4 contract. That adapter
-and bounded runtime remain a subsequent M7-A slice.
+`appsink`. The existing passive runner is a wrapper around that shared graph;
+M4's JSONL 0.1, stop meanings, CLI, and trust semantics remain unchanged.
+There is no arbitrary pipeline/property passthrough or downstream RTSP server.
+
+Only active ingest enables guards. Depay input probes track ordered RTP
+sequence (including wrap), SSRC and loss/corruption flags. Output probes track
+discontinuity/corruption and stream-start, caps, segment, flush and GAP events.
+Initial stream setup and first-buffer DISCONT are startup, while later
+uncertainty latches loss. Repeated SETUP/PLAY after media begins, pad removal,
+RTCP timeout, pipeline errors and read stalls also terminate active ingest.
+Normal IDRs do not reset an epoch.
+
+A real RTSP run stops on the first uncertainty. Probes record only a thread-safe
+latch; application-thread code owns signing. Loss is checked around AU delivery,
+and queued pre-gap samples may be conservatively discarded. The pipeline is
+not resumed or automatically reconnected. A caller restart must use a fresh
+runtime and distinct output artifact. `ContinuityLost` is distinct from other
+execution failures.
+
+RTSP bus EOS is conservative: testing showed that an abrupt socket close can
+surface as EOS. Active ingest therefore aborts on that ambiguous termination;
+it does not manufacture clean media closure. Clean EOS remains an explicit
+internal event for sources that can establish that lifecycle. Intentional
+bounded observations can finalize their observed prefix while retaining the
+source-coverage and gateway-identity limitations.
+
+GStreamer's [RTP jitterbuffer documentation](https://gstreamer.freedesktop.org/documentation/rtpmanager/rtpjitterbuffer.html)
+describes lost-packet events, and its [appsink documentation](https://gstreamer.freedesktop.org/documentation/app/appsink.html)
+describes the sample/EOS boundary. The active guards also check RTP sequence
+directly rather than relying on optional lost-event emission alone.
 
 ## Trust and validation
 
@@ -92,6 +145,12 @@ camera cryptographic identity, or depicted-event authenticity.
 then checks incremental output with the existing independent Nanexus verifier,
 compressed byte/order preservation, tamper rejection, identity errors,
 abort/restart, terminal states, and input/output bounds and failures.
+`live_signing_epochs` checks both codecs, no bridging across a gap, explicit
+EOS versus abort, identity/input/signer/output/close failures, epoch bounds,
+and continuity flags/events. Its signer-error injection is test-only.
+`live_signing_rtsp` uses a sealed loopback test origin for continuous, RTP-gap,
+cancellation, and socket-disconnect runs, plus unchanged passive M4 runs for
+both codecs. This fixture is not a product server or a generic media framework.
 Generated private keys stay in ignored build directories.
 
 M1–M6 schemas and behavior are unchanged. The M6 adapter remains finite, and
