@@ -313,3 +313,25 @@ if ffmpeg.found() and ffprobe.found()
 else
   message('Skipping synthetic preservation matrix: ffmpeg and ffprobe are optional')
 endif
+
+# M7-A core: deterministic incremental signing, independent existing verifier.
+test_stream_signer = executable(
+  'test_stream_signer',
+  'test_stream_signer.cpp',
+  dependencies: videotrust_dep,
+  install: false,
+)
+test(
+  'stream_signer_integration',
+  verify_runner,
+  args: [
+    '-lc',
+    'set -euo pipefail; '
+    + 'OMS_SIGN_ANNEXB="' + oms_sign_annexb.full_path() + '" '
+    + '"' + gen_script + '" "' + fixture_dir + '"; '
+    + '"' + test_stream_signer.full_path() + '" "' + fixture_dir + '"',
+  ],
+  depends: [oms_sign_annexb, test_stream_signer],
+  timeout: 180,
+  is_parallel: false,
+)

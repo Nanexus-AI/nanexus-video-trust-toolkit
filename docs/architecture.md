@@ -131,3 +131,16 @@ Optional `NANEXUS_VERIFY_TIMEOUT` is seconds, at most 300. The server exposes
 `video_trust.verify_file`, `video_trust.compare_preservation`, and
 `video_trust.assess_video_integrity`. It does not sign or modify files, and its
 results do not establish source authenticity.
+
+## M7 gateway signing core
+
+The experimental `StreamSigner` owns one official signing session per epoch
+and accepts existing complete Annex-B NAL objects. Its synchronous bounded
+sink emits compressed NALs plus official signing SEIs. Clean EOS, explicit
+abort, and terminal input/signer/output failures are separate states. Gateway
+signer identity does not establish original camera identity.
+
+M4's fixed compressed RTSP/TCP ingest remains the live-path precedent. Active
+gateway orchestration awaits a discontinuity-aware internal adapter and does
+not change passive live 0.1 or M6 finite integration 0.1. See
+[`m7-signing-gateway.md`](m7-signing-gateway.md).

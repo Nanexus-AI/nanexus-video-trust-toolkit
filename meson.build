@@ -91,6 +91,7 @@ videotrust_core = static_library(
     'src/render/live_contract.cpp',
     'src/render/render.cpp',
     'src/signing/sign.cpp',
+    'src/signing/stream_signer.cpp',
     'src/tamper/tamper.cpp',
     'src/upstream/session.cpp',
     'src/upstream/upstream_mapping.cpp',
