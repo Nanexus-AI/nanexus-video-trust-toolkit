@@ -19,7 +19,7 @@ def nalus(data):
     return [part for part in data.replace(b"\x00\x00\x00\x01", b"\x00\x00\x01").split(b"\x00\x00\x01")[1:] if part]
 
 
-def run_case(binary, root, codec, mode):
+def run_case(binary, root, codec, mode, client=None):
     media = nalus((root / codec / f"unsigned.{codec}").read_bytes())
     naltype = (lambda n: n[0] & 31) if codec == "h264" else (lambda n: (n[0] >> 1) & 63)
     vcl = (lambda n: naltype(n) in (1, 5)) if codec == "h264" else (lambda n: naltype(n) < 32)
@@ -117,10 +117,13 @@ def run_case(binary, root, codec, mode):
         thread = threading.Thread(target=serve, daemon=True)
         thread.start()
         try:
-            result = subprocess.run([str(binary), str(root), codec, endpoint, mode],
-                                    capture_output=True, text=True, timeout=6)
-            assert result.returncode == 0, (codec, mode, result.stdout, result.stderr)
-            print(result.stdout, end="")
+            if client is not None:
+                client(endpoint)
+            else:
+                result = subprocess.run([str(binary), str(root), codec, endpoint, mode],
+                                        capture_output=True, text=True, timeout=6)
+                assert result.returncode == 0, (codec, mode, result.stdout, result.stderr)
+                print(result.stdout, end="")
         finally:
             stop.set()
             thread.join(timeout=1)

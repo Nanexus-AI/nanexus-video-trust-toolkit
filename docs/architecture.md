@@ -146,3 +146,9 @@ fresh signers and separate sinks per epoch. Ambiguous RTSP EOS aborts, while
 explicit clean EOS or a healthy bounded observation can finalize. Passive live
 0.1 and M6 finite integration 0.1 remain unchanged. See
 [`m7-signing-gateway.md`](m7-signing-gateway.md).
+
+M7 also supplies a foreground `gateway-sign` operator entry point. Its exclusive
+ordinary-filesystem sink retains separate compressed media and bounded unsigned
+metadata per epoch. A2 continuity rules remain intact; real RTSP loss stops the
+invocation, and restart requires a new output root. See the M7 workflow document
+for sync/close, incomplete evidence, bounds and verification semantics.

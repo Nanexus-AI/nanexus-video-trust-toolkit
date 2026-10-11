@@ -1,11 +1,11 @@
-# M7 signing gateway core (experimental)
+# M7 signing gateway workflow (experimental)
 
 M7 — Legacy Signing Gateway Reference Prototype is in progress. Its first
 M7-A slice supplies an internal C++ stream-oriented signer on Ubuntu 24.04
 x86_64. M7-A2 adds an internal discontinuity-aware RTSP/TCP signing runtime.
-Downstream transport, an operator invocation/artifact workflow, Jetson validation
-(M7-B), and final end-to-end validation/closure (M7-C) remain open.
-There is no new command, network service, tagged release, or version change.
+M7-A3 adds a bounded foreground `gateway-sign` command and durable per-epoch
+artifacts. Downstream transport, Jetson validation (M7-B), and final end-to-end
+validation/closure (M7-C) remain open. This is an experimental reference workflow.
 
 ## Compressed media boundary
 
@@ -88,7 +88,7 @@ The runtime caps epoch count at eight and cumulative output at a configurable
 maximum of 1 GiB, in addition to A1's per-epoch limits. AUs are bounded to
 8 MiB and 4,096 NALs. Caller callbacks must be synchronous, non-reentrant,
 prompt, and cooperative; arbitrary blocking caller code cannot be preempted.
-The test implementation uses bounded memory sinks.
+A3 supplies an ordinary filesystem sink; A2 also tests bounded memory sinks.
 
 | Input/lifecycle | Signing behavior |
 | --- | --- |
@@ -133,6 +133,98 @@ describes lost-packet events, and its [appsink documentation](https://gstreamer.
 describes the sample/EOS boundary. The active guards also check RTP sequence
 directly rather than relying on optional lost-event emission alone.
 
+## Foreground operator workflow
+
+Build with `-Dlive_rtsp=enabled` and the dependencies in [build.md](build.md).
+Use one configured RTSP/TCP video source and externally managed laboratory
+identity files. The unencrypted key must match the leaf in the official-format
+certificate chain. The output parent directories must already exist; choose a
+**new absolute directory** for each invocation.
+
+```sh
+video-trust gateway-sign --codec h264 --duration 30 \
+  --key /path/to/gateway.key.pem --cert /path/to/gateway-chain.pem \
+  --output-root /path/to/new-session rtsp://camera.example/stream
+
+video-trust verify --codec h264 --ca /path/to/trust-anchor.pem --json \
+  /path/to/new-session/epoch-000001/signed.h264
+video-trust inspect --codec h264 --ca /path/to/trust-anchor.pem --json \
+  /path/to/new-session/epoch-000001/signed.h264
+```
+
+For H.265 use `--codec h265` and `signed.h265`. Runtime duration is a strict
+integer from 1 to 300 seconds, with the existing five-second connect/read-stall
+policy. Exit 0 means a finalized observed prefix and acknowledged artifact
+persistence; it is **not** a verification verdict. Exit 2 means configuration,
+identity or output-root error; exit 3 means runtime, output, cancellation or
+continuity loss. SIGINT/SIGTERM request an abort and retain the observed media.
+No media/random-access startup means no successful signing epoch.
+
+Credentials follow `verify-live`: set both `NANEXUS_RTSP_USERNAME` and
+`NANEXUS_RTSP_PASSWORD` in the process environment when needed. Each is bounded
+to 256 bytes. Do not place credentials in the URL or command arguments.
+The command prints generic diagnostics and records neither credentials nor
+endpoint/identity paths in artifacts. Environment credentials are a local
+reference convention, not a production credential store.
+
+### Artifact layout and interpretation
+
+```text
+new-session/
+  epoch-000001/
+    signed.h264  # signed.h265 for H.265
+    epoch.json
+  session.json
+```
+
+The internal event orchestrator can produce `epoch-000002` through
+`epoch-000008` after explicit gap/restart events. The RTSP operator command
+stops on the first continuity loss; it does not reconnect automatically. Restart
+with a new output root. Epoch indices are local to that root. Never concatenate
+epoch files to suggest continuity across a gap.
+
+`nanexus.gateway-epoch.v1` records a bounded index, codec, fixed media basename,
+acknowledged bytes, signer state, start/termination reason, failure stage,
+`source_identity: not_established` and `cross_epoch_continuity: false`.
+`nanexus.gateway-session.v1` records the terminal run result and counts.
+These are unsigned operator metadata, separate from existing verifier and
+inspection schemas. They are not cryptographic evidence or an authenticity
+verdict; verify the media independently. No artifact hash is added because
+this workflow directly verifies the media bytes.
+
+`finalized` means the official signer finalized the observed prefix and the
+media sink synchronized/closed successfully. `aborted` retains an unresolved
+tail without manufacturing an EOS signature. Such media may contain valid
+signed prefixes; that does not turn it into a finalized epoch. `failed` records
+terminal signer/output failure. Initially `incomplete` metadata is persisted;
+on sink closure its reason is `pending_run_result`, and successful run sealing
+updates the reason and creates `session.json`. A missing session record,
+pending metadata or `.pending` document indicates incomplete run evidence.
+Never infer clean run completion from a partial artifact alone.
+
+### Write safety and bounds
+
+Output roots are absolute, at most 4096 bytes, with no empty, dot, dot-dot or
+symlink components; existing parent directories must be trusted ordinary
+filesystem directories. Root and epoch directories are created exclusively
+with mode 0700, files with mode 0600. Any existing root (including an empty
+directory or symlink) fails; there is no `--force` and no arbitrary cleanup.
+Descriptor-relative no-follow opens keep writes under the held directories.
+The writer replaces only its own metadata in its newly created private directory,
+using exclusive temporary files, fsync and atomic rename. It never replaces
+existing operator media. Protect the output tree against other processes running
+as the same user and against external filesystem modification.
+
+Media writes are synchronous and bounded to 1 GiB cumulative/eight epochs,
+with the A1/A2 NAL/AU bounds. Metadata is at most 4096 bytes per document.
+Media fsync/close, metadata fsync/rename and directory synchronization are checked.
+Failures return nonzero and retain partial/incomplete evidence; no success is
+claimed. `bytes_acknowledged` counts complete accepted writes; a failed partial
+write may leave additional unacknowledged bytes. Regular filesystem operations
+are cooperative: byte bounds and ingest duration are not a hard deadline for
+blocked disk I/O. Durability depends on the filesystem honoring synchronization;
+use ordinary local storage for this reference workflow.
+
 ## Trust and validation
 
 A valid signature establishes gateway signer observation from the signing
@@ -151,7 +243,10 @@ and continuity flags/events. Its signer-error injection is test-only.
 `live_signing_rtsp` uses a sealed loopback test origin for continuous, RTP-gap,
 cancellation, and socket-disconnect runs, plus unchanged passive M4 runs for
 both codecs. This fixture is not a product server or a generic media framework.
-Generated private keys stay in ignored build directories.
+`epoch_artifacts` tests separate durable files across a gap and write/sync/close/
+publication errors for both codecs. `gateway_sign_cli` tests real foreground
+loopback invocations, verify/inspect, cancellation/disconnect, path safety and
+credential redaction. Generated private keys stay in ignored build directories.
 
 M1–M6 schemas and behavior are unchanged. The M6 adapter remains finite, and
 MCP exposes exactly `video_trust.verify_file`,

@@ -364,3 +364,24 @@ if live_rtsp_enabled
     depends: [oms_sign_annexb, test_live_signing_rtsp], timeout: 60, is_parallel: false,
   )
 endif
+
+# A3 durable sink lifecycle and actual foreground CLI use the existing verifier.
+test_epoch_artifacts = executable('test_epoch_artifacts', 'test_epoch_artifacts.cpp',
+  dependencies: [videotrust_dep, nlohmann_json_dep], install: false,
+  link_args: ['-Wl,--wrap=write', '-Wl,--wrap=fsync', '-Wl,--wrap=close'])
+test('epoch_artifacts', verify_runner,
+  args: ['-lc', 'set -euo pipefail; '
+    + 'OMS_SIGN_ANNEXB="' + oms_sign_annexb.full_path() + '" '
+    + '"' + gen_script + '" "' + fixture_dir + '"; '
+    + '"' + test_epoch_artifacts.full_path() + '" "' + fixture_dir + '"'],
+  depends: [oms_sign_annexb, test_epoch_artifacts], timeout: 60, is_parallel: false)
+if live_rtsp_enabled
+  test('gateway_sign_cli', verify_runner,
+    args: ['-lc', 'set -euo pipefail; '
+      + 'OMS_SIGN_ANNEXB="' + oms_sign_annexb.full_path() + '" '
+      + '"' + gen_script + '" "' + fixture_dir + '"; '
+      + '"' + python.full_path() + '" '
+      + '"' + meson.project_source_root() / 'tests/integration/test_gateway_sign.py' + '" '
+      + '"' + video_trust.full_path() + '" "' + fixture_dir + '"'],
+    depends: [oms_sign_annexb, video_trust], timeout: 60, is_parallel: false)
+endif

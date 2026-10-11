@@ -1,3 +1,4 @@
+#include "gateway_sign.hpp"
 #include "videotrust/compare.hpp"
 #include "videotrust/error.hpp"
 #include "videotrust/integration.hpp"
@@ -46,6 +47,8 @@ void Usage(std::ostream& out) {
       << "                   -o OUTPUT.es [--force] [--quiet] <input.es>\n"
       << "  video-trust tamper --codec h264|h265 --operation OP -o OUTPUT.es\n"
       << "                    [--force] [--quiet] [--count N] <input.es>\n"
+      << "  video-trust gateway-sign --codec h264|h265 --duration 1..300\n"
+      << "                   --key KEY.pem --cert CHAIN.pem --output-root NEW_ABSOLUTE_DIRECTORY <rtsp-url>\n"
       << "  video-trust --version\n"
       << "\n"
       << "Operations: corrupt-vcl | strip-signing-sei | truncate\n"
@@ -770,6 +773,8 @@ int main(int argc, char** argv) {
     std::cout << "video-trust " << VIDEO_TRUST_VERSION << "\n";
     return 0;
   }
+
+  if (cmd == "gateway-sign") return RunGatewaySignCommand(argc, argv);
 
   std::string err;
   if (cmd == "verify") {

@@ -95,13 +95,14 @@ videotrust_core = static_library(
     'src/signing/sign.cpp',
     'src/signing/stream_signer.cpp',
     'src/signing/live_signing.cpp',
+    'src/signing/epoch_artifacts.cpp',
     'src/tamper/tamper.cpp',
     'src/upstream/session.cpp',
     'src/upstream/upstream_mapping.cpp',
     'src/verification/verify.cpp',
   ),
   include_directories: inc,
-  dependencies: oms_dep,
+  dependencies: [oms_dep, nlohmann_json_dep],
   install: false,
 )
 
@@ -132,7 +133,7 @@ videotrust_dep = declare_dependency(
 
 video_trust = executable(
   'video-trust',
-  'src/cli/main.cpp',
+  ['src/cli/main.cpp', 'src/cli/gateway_sign.cpp'],
   dependencies: videotrust_dep,
   cpp_args: [
     '-DVIDEO_TRUST_VERSION="' + meson.project_version() + '"',
