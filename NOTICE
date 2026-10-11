@@ -7,12 +7,19 @@ Licensed under the Apache License, Version 2.0. See LICENSE.
 ---------------------------------------------------------------------------
 Third-party software
 
-This project intends to use the ONVIF Media Signing Framework as an upstream
+This project uses the ONVIF Media Signing Framework as an upstream
 dependency (MIT License, Copyright (c) 2025 ONVIF). Upstream sources are fetched
 separately and are not vendored into this repository by default. See
 docs/upstream-media-signing.md and third_party/README.md.
 
-The integration adapter uses nlohmann JSON (MIT License, Copyright (c)
-2013-2022 Niels Lohmann), supplied as a system build dependency and not
+The signing artifact writer and integration adapter use nlohmann JSON
+(MIT License, Copyright (c) 2013-2022 Niels Lohmann), supplied as an external
+build dependency and not
 vendored into this repository.
 ---------------------------------------------------------------------------
+
+The optional live ingest dynamically links GStreamer core/app/RTP (LGPL-2.1-or-later)
+and uses LGPL RTSP/RTP plugins. GStreamer is not vendored. OpenSSL 3.x is an
+external dependency under Apache-2.0. The Python Agent uses external MCP and
+Pydantic packages under MIT. Preserve applicable third-party notices when
+redistributing dependencies; this repository does not bundle their binaries.

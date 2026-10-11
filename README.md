@@ -34,7 +34,7 @@ M3 VMS/NVR preservation:    Complete — published on current main (not a tagged
 M4 Passive live RTSP:       Complete — published on current main (not a tagged release)
 M5 ARM64 / edge deployment: Complete — validated on Jetson Orin Nano (not a tagged release)
 M6 Integration layer:        Complete — finite local-process contract and reference (not tagged)
-M7 Signing gateway:         In progress — x86 foreground signing workflow and separate epoch artifacts
+M7 Signing gateway:         Complete reference prototype — scoped x86/Jetson validation (not tagged)
 Stable production release:   None
 ```
 
@@ -43,8 +43,8 @@ Stable production release:   None
 experimental Agent interface, and current `main` adds M2 inspection, M3
 preservation assessment, bounded M4 live verification, and scoped M5 ARM64
 portability, plus the M6 finite integration contract and adjacent-system
-reference. These post-release
-changes are not part of `v0.1.0`,
+reference and the M7 legacy signing gateway reference prototype. These
+post-release changes are not part of `v0.1.0`,
 do not create a new tagged release, and do not make the Agent interface a
 stable public API.
 
@@ -128,7 +128,7 @@ signatures. See [`docs/preservation-v0.1.md`](docs/preservation-v0.1.md).
 
 ## What it is not
 
-* A VMS, NVR, camera client, or media player
+* A VMS, NVR, general camera management client, or media player
 * A general-purpose Agent, workflow engine, or multi-agent platform
 * A replacement for the ONVIF Media Signing Framework
 * An ONVIF-certified or conformant product
@@ -182,9 +182,11 @@ More detail: [`docs/build.md`](docs/build.md), [`docs/usage.md`](docs/usage.md),
 [`docs/m1-contracts.md`](docs/m1-contracts.md), [`docs/json-v0.1.md`](docs/json-v0.1.md),
 and [`docs/inspection-v0.1.md`](docs/inspection-v0.1.md).
 
-M7 provides experimental foreground `gateway-sign` for bounded RTSP/TCP input
-and durable separate epoch artifacts; see [`docs/m7-signing-gateway.md`](docs/m7-signing-gateway.md)
-for its compressed egress, epoch semantics, and remaining work.
+M7 provides experimental foreground `gateway-sign` for bounded H.264/H.265
+RTSP/TCP input and durable separate epoch artifacts. It is validated on x86 and
+the documented Jetson Orin Nano, with real-camera evidence scoped to C210 H.264.
+See [`docs/m7-signing-gateway.md`](docs/m7-signing-gateway.md) for its compressed
+egress, epoch semantics and limitations.
 
 ## Agent quick start
 

@@ -1,7 +1,8 @@
 # CLI usage
 
 Experimental / pre-release. File commands use Annex-B elementary streams;
-`verify-live` is the separate bounded RTSP/TCP reference-lab command.
+`verify-live` observes bounded RTSP/TCP input; `gateway-sign` signs a bounded
+observed prefix into separate durable Annex-B epoch artifacts.
 
 `video-trust-integration` is a separate finite, read-only local-process adapter
 for adjacent systems. Its contract and policy are documented in
@@ -19,6 +20,30 @@ M1 signing is a **reference-lab** operation. Valid signatures and certificate
 checks do **not** establish camera/source authenticity.
 
 ## Commands
+
+### Sign a bounded legacy stream
+
+```bash
+video-trust gateway-sign --codec h264 --duration 30 \
+  --key /path/to/gateway.key.pem --cert /path/to/gateway-chain.pem \
+  --output-root /path/to/new-session rtsp://camera.example/stream
+video-trust verify --codec h264 --ca /path/to/trust-anchor.pem --json \
+  /path/to/new-session/epoch-000001/signed.h264
+```
+
+Use H.265 with `--codec h265` and `signed.h265`. All five options and one source
+are required; duration is 1–300 seconds. Output requires a new absolute root
+with existing ordinary parents; existing roots and symlink components fail.
+Credentials use both `NANEXUS_RTSP_USERNAME` and `NANEXUS_RTSP_PASSWORD`, never
+URL userinfo. Exit 0 means a finalized observed prefix and acknowledged
+persistence, 2 configuration/identity/path error, and 3 runtime/output/abort/loss.
+Independently verify the artifact: signing success is not a trust verdict.
+
+SIGINT/SIGTERM and uncertain continuity abort. Restart in a new process/root;
+never concatenate epochs or infer continuity across unseen gaps. Gateway signer
+identity does not prove camera identity, pre-gateway integrity or event
+authenticity. See [`m7-signing-gateway.md`](m7-signing-gateway.md) for exact write,
+metadata, trust, validation and limitation semantics.
 
 ### Verify a bounded live stream
 
@@ -159,6 +184,7 @@ Details and caveats: [`m1-contracts.md`](m1-contracts.md).
 ## Exit codes (summary)
 
 * **verify / inspect:** 0 positive · 1 negative integrity · 2 CLI/input · 3 runtime · 4 unsigned/incomplete/not verifiable
+* **gateway-sign:** 0 finalized persisted prefix · 2 configuration/identity/path · 3 runtime/output/abort/loss
 * **sign / tamper:** 0 success · 2 CLI/input/path · 3 runtime
 * **compare-preservation:** 0 preserved · 1 partial/not preserved · 2 CLI/input · 3 runtime · 4 indeterminate/not applicable
 

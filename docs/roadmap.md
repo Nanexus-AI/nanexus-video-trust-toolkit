@@ -7,7 +7,8 @@ High-level milestone picture for Nanexus Video Trust Toolkit.
 **Current published developer release:** **M1 / `v0.1.0`** (Pre-release).
 
 M1.5 and M2 are implemented in current `main` development history. M3 through
-M6 are complete and published on current `main`. None is part of the `v0.1.0`
+M6 are complete and published on current `main`. M7 implementation and scoped
+validation are complete in current development history. None is part of the `v0.1.0`
 tag or implies that a later release exists.
 
 This is an independent open-source project using the ONVIF Media Signing
@@ -23,7 +24,7 @@ framework/standard. It is **not** an official ONVIF project.
 | **M4** | Passive Live RTSP Verification | **Complete and published on current `main`** — not a tagged release |
 | **M5** | ARM64 / Edge Deployment | **Complete and published on current `main`** — scoped Jetson validation; not a tagged release |
 | **M6** | Integration Layer | **Complete and published on current `main`** — finite local-process contract; not a tagged release |
-| **M7** | Legacy Signing Gateway Reference Prototype | In progress — M7-A bounded x86 operator/artifact workflow; later validation remains open |
+| **M7** | Legacy Signing Gateway Reference Prototype | **Complete reference prototype** — scoped x86/Jetson and C210 H.264 validation; not a tagged release |
 | **M8** | Native Media Signing Camera | Planned |
 
 ## M0 — Feasibility Spike (complete)
@@ -142,10 +143,11 @@ tool, product version, tag, or GitHub release. See
   (complete on current `main`; untagged)
 * **M6** — finite integration layer and adjacent-system reference
   (complete on current `main`; untagged)
-* **M7** — legacy signing gateway reference prototype; x86 signing core and
-  guarded internal live orchestration (see [`m7-signing-gateway.md`](m7-signing-gateway.md));
-  bounded foreground operator/artifact workflow implemented; Jetson reference
-  validation M7-B and independent closure M7-C remain open
+* **M7** — legacy signing gateway reference prototype: bounded H.264/H.265
+  foreground signing, discontinuity-aware epochs and durable artifacts;
+  implementation and scoped x86/Jetson validation complete, including C210
+  H.264 and client interruption/fresh-epoch evidence. No appliance, downstream
+  RTSP server or capacity qualification (see [`m7-signing-gateway.md`](m7-signing-gateway.md)).
 * **M8** — native Media Signing camera path
 
 Milestone titles may be refined as design work proceeds; the progression above is

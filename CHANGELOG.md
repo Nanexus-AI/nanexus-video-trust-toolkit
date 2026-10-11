@@ -9,6 +9,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+- M7 reference legacy signing gateway: bounded H.264/H.265 compressed RTSP/TCP
+  signing, discontinuity-aware epochs, exclusive durable artifacts and
+  independent verification. Scoped validation covers x86 Ubuntu 24.04 and
+  the documented Jetson Orin Nano, with real C210 H.264 and controlled client
+  interruption/fresh-epoch evidence. No decode/re-encode, restream server,
+  production PKI, general camera/platform support or capacity qualification.
 - M2 file-based `video-trust inspect` for Annex-B H.264/H.265, with
   human-readable output by default and a distinct `--json` inspection document
 - Inspection JSON contract `media_signing_inspection` / schema version `0.1`,
@@ -60,6 +66,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   ONVIF patch must be reassessed when the pin moves to a future release.
 - M6 finite integration does not add an Agent/MCP tool or expose live RTSP.
   Execution failures remain separate from completed trust/domain outcomes.
+- M7 signs only from the gateway observation boundary onward; gateway identity
+  is separate from camera identity, and no continuity spans unseen gaps or
+  epochs. It adds no MCP tool, finite integration operation or frozen schema
+  change, and creates no new version/tag/release.
 - Post-`v0.1.0` development continues here after the first developer release.
 
 ## [0.1.0] — 2026-09-27

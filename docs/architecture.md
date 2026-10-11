@@ -152,3 +152,10 @@ ordinary-filesystem sink retains separate compressed media and bounded unsigned
 metadata per epoch. A2 continuity rules remain intact; real RTSP loss stops the
 invocation, and restart requires a new output root. See the M7 workflow document
 for sync/close, incomplete evidence, bounds and verification semantics.
+
+The signing core has no NVIDIA-specific dependency. Scoped native validation
+covers the documented Jetson Orin Nano configuration, synthetic H.264/H.265,
+and real C210 H.264. It does not establish general ARM64/camera compatibility,
+production key management, restreaming or long-duration capacity. Gateway
+observation onward remains the only signing boundary; no continuity spans
+unseen gaps or epochs.

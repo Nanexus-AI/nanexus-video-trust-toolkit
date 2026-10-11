@@ -9,5 +9,5 @@ option(
   'live_rtsp',
   type: 'feature',
   value: 'auto',
-  description: 'Build bounded RTSP/TCP verify-live support with system GStreamer',
+  description: 'Build bounded RTSP/TCP verify-live and gateway-sign support with GStreamer',
 )

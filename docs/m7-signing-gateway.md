@@ -1,11 +1,14 @@
 # M7 signing gateway workflow (experimental)
 
-M7 — Legacy Signing Gateway Reference Prototype is in progress. Its first
-M7-A slice supplies an internal C++ stream-oriented signer on Ubuntu 24.04
-x86_64. M7-A2 adds an internal discontinuity-aware RTSP/TCP signing runtime.
-M7-A3 adds a bounded foreground `gateway-sign` command and durable per-epoch
-artifacts. Downstream transport, Jetson validation (M7-B), and final end-to-end
-validation/closure (M7-C) remain open. This is an experimental reference workflow.
+M7 — Legacy Signing Gateway Reference Prototype supplies a bounded foreground
+`gateway-sign` command, H.264/H.265 compressed-media signing, discontinuity-aware
+RTSP/TCP ingest, and durable separate epoch artifacts. Implementation and scoped
+validation are complete. This remains an experimental reference prototype,
+not a production appliance or service; product version remains `0.1.0`.
+
+Validation covers Ubuntu 24.04 x86_64 and native operation on the documented
+Jetson Orin Nano ARM64 configuration. Real-camera evidence is limited to the
+Tapo C210 H.264 RTSP/TCP path. H.265 is validated synthetically on both platforms.
 
 ## Compressed media boundary
 
@@ -252,4 +255,34 @@ M1–M6 schemas and behavior are unchanged. The M6 adapter remains finite, and
 MCP exposes exactly `video_trust.verify_file`,
 `video_trust.assess_video_integrity`, and `video_trust.compare_preservation`.
 M7 does not expose active signing through Agent/MCP or implement hardware
-productization. No M7 Jetson support is claimed by this x86 slice.
+productization.
+
+### Scoped platform and camera evidence
+
+Native M7 validation used an NVIDIA Jetson Orin Nano Developer Kit, aarch64,
+Ubuntu 24.04.4, L4T R39.2.1, kernel 6.8.12-1021-tegra, GCC 13.3.0 and
+GStreamer 1.24.2. The exact implementation was built natively with independently
+staged M7-local dependencies: nlohmann JSON 3.11.3 and pinned ONVIF r25.12.6
+with the tracked undefined-TLV hardening patch. No system-wide install or
+M5/M6 workspace dependency was required. No CUDA, TensorRT, NVDEC, NVENC or
+NVIDIA-specific media API is required by the signing path.
+
+Both synthetic codecs produced finalized durable artifacts independently
+verified as VALID. ARM64 regression passed all 32 eligible tests; the optional
+software FFmpeg preservation matrix was explicitly excluded because the
+protected NVIDIA FFmpeg build lacked its required encode/remux behavior.
+This does not establish generic ARM64, Jetson-family or camera compatibility.
+
+Two independent five-second C210 H.264 observations finalized separate artifacts
+and verified as VALID with source authenticity `not_established`. A controlled
+SIGINT to the gateway client aborted its active epoch; a fresh process and output
+root then produced a separately VALID five-second artifact. The old artifact
+remained unchanged. This validates client cancellation/restart, not automatic
+reconnect or disruptive network-fault recovery. No real H.265 camera was tested.
+
+No downstream RTSP restream/server, multi-camera orchestration, production key
+provisioning, secure-element/HSM guarantee, long-duration stability or channel
+capacity qualification is provided. Aborted epochs remain unresolved-tail
+artifacts, separate from cleanly finalized epochs. Neither VALID nor certificate
+trust proves camera identity; unsigned media is not thereby invalid, and
+transport/execution failure is separate from a trust failure.

@@ -3,7 +3,8 @@
 Experimental / pre-release developer reference lab. The `v0.1.0` release
 contains Annex-B `verify` / `sign` / `tamper` for H.264 and H.265; current
 `main` also contains `inspect`, `compare-preservation`, and bounded
-`verify-live`; M4 and the scoped M5 ARM64 portability work are complete and
+`verify-live`, the finite `video-trust-integration` adapter, and experimental
+`gateway-sign`; M4 and the scoped M5 ARM64 portability work are complete and
 published on current `main`, but neither creates a new tagged release or GitHub
 release.
 
@@ -46,8 +47,8 @@ sudo apt-get install -y build-essential pkg-config meson ninja-build \
 * `verify-live` dynamically links the LGPL GStreamer core/app libraries and
   uses the LGPL `rtspsrc` and RTP depayloader plugins from plugins-good. No
   GStreamer binary is vendored and no GPL-only plugin is required.
-* `video-trust-integration` uses the MIT-licensed, header-only nlohmann JSON
-  package at build time. It adds no JSON runtime library and remains independent
+* The signing artifact writer and finite integration adapter use the MIT-licensed,
+  header-only nlohmann JSON package at build time. It adds no JSON runtime library and remains independent
   from optional GStreamer/live support.
 
 ## ONVIF dependency
@@ -99,7 +100,7 @@ LD_LIBRARY_PATH="$OMS_LIBDIR" destdir/usr/local/bin/video-trust --help
 
 Use `-Dlive_rtsp=enabled` to require live support at configure time or
 `-Dlive_rtsp=disabled` for a finite-file-only build. The default `auto` enables
-it when both `gstreamer-1.0` and `gstreamer-app-1.0` are available.
+it when `gstreamer-1.0`, `gstreamer-app-1.0` and `gstreamer-rtp-1.0` are available.
 
 `oms_prefix` points Meson at the ONVIF headers and shared library. Meson uses
 its configured `libdir` plus generic `lib`/`lib64` candidates, avoiding an
@@ -112,7 +113,8 @@ a known local-prefix deployment limitation, not a relocatable binary-package
 guarantee. Container, appliance, and prebuilt-package deployment are outside
 the validated scope.
 
-Installed user-facing artifact: **`video-trust`** only (no public SDK headers).
+Installed user-facing artifacts: **`video-trust`** and **`video-trust-integration`**
+(no public SDK headers).
 
 ## CLI version
 
@@ -147,6 +149,9 @@ the documented development packages use ordinary pkg-config discovery.
 A partial extracted development sysroot may have broken library symlinks if
 the corresponding runtime libraries were not extracted. Repair discovery in
 the caller's local prefix, or use a complete development environment; no system
-package installation is implied by a missing dependency. Existing ARM64
-evidence does not establish M7 support, and future Jetson work must first follow
-its protected baseline audit and authorization requirements.
+package installation is implied by a missing dependency. M7 was natively
+validated on the exact Jetson configuration documented in
+[`m7-signing-gateway.md`](m7-signing-gateway.md), using independently staged
+M7-local JSON headers and ONVIF source/library with retained notices. No M5/M6
+workspace or system-wide installation was required. This is scoped validation,
+not general ARM64 support or permission to change a protected target.
